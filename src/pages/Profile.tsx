@@ -411,7 +411,7 @@ const Balance = () => {
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>
                   <div className='bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max'>Thu thập</div>
-                  <p className='text-sm font-medium dark:text-white'>Quà tặng trực tiếp</p>
+                  <p className='text-sm font-medium '>Quà tặng trực tiếp</p>
                   <p className='text-xs text-gray-400'>2025-06-15 18:53:24</p>
                 </div>
                 <div className='text-end'>
@@ -424,7 +424,7 @@ const Balance = () => {
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>
                   <div className='bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max'>Thu thập</div>
-                  <p className='text-sm font-medium dark:text-white'>Quà tặng trực tiếp</p>
+                  <p className='text-sm font-medium '>Quà tặng trực tiếp</p>
                   <p className='text-xs text-gray-400'>2025-06-15 18:53:24</p>
                 </div>
                 <div className='text-end'>
@@ -437,7 +437,7 @@ const Balance = () => {
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>
                   <div className='bg-pink-500 text-white px-2 py-1 rounded-md text-xs w-max'>Chi tiêu</div>
-                  <p className='text-sm font-medium dark:text-white'>Quà tặng trực tiếp</p>
+                  <p className='text-sm font-medium '>Quà tặng trực tiếp</p>
                   <p className='text-xs text-gray-400'>2025-06-15 18:53:24</p>
                 </div>
                 <div className='text-end'>
