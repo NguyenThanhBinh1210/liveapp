@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PlayIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import avatar from '~/assets/4sand.avif'
 import { CustomAudioPlayer } from '~/components/CustomAudioPlayer'
