@@ -202,21 +202,6 @@ const ChatBox = () => {
     }
   }, [])
 
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
-  const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (!isMobileDevice) return
-
-      const isKeyboard = window.innerHeight < window.screen.height - 100
-      setIsKeyboardOpen(isKeyboard)
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
   return (
     <>
       <div onClick={() => setIsOpen(true)} className='flex items-center justify-between cursor-pointer'>
@@ -268,11 +253,7 @@ const ChatBox = () => {
               </div>
             </div>
           </div>
-          <div
-            ref={chatRef}
-            className={`flex flex-col overflow-y-auto px-4 pt-2 pb-16 transition-all duration-300 space-y-3  ${isMobileDevice && isKeyboardOpen ? 'h-[calc(100vh-300px)]' : 'h-[calc(100vh-60px)]'
-              }`}
-          >
+          <div ref={chatRef} className='pt-2 px-4 flex flex-col  space-y-3 pb-14 overflow-y-auto h-[calc(100vh-60px)]'>
             {messages.map((msg: any) => (
               <div key={msg.id} className={`flex mt-auto ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                 <div
@@ -331,8 +312,6 @@ const ChatBox = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                onFocus={() => setIsKeyboardOpen(true)}
-                onBlur={() => setIsKeyboardOpen(false)}
                 type='text'
                 placeholder='Nhập tin nhắn...'
                 className='w-full rounded-full p-2 text-sm'
