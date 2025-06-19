@@ -5,7 +5,7 @@ import avatar from '~/assets/4sand.avif'
 const Message = () => {
   return (
     <div>
-      <div className='p-2 flex items-center gap-x-2  mb-2 justify-between sticky top-0 bg-white'>
+      <div className='p-2 flex items-center gap-x-2  mb-2 justify-between sticky top-0 bg-white dark:bg-black'>
         <button className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
@@ -66,8 +66,8 @@ const Followers = () => {
             </svg>
           </div>
           <div className=''>
-            <p className='text-sm font-medium'>Những Follower mới</p>
-            <p className='text-xs text-gray-700'>
+            <p className='text-sm font-medium dark:text-white'>Những Follower mới</p>
+            <p className='text-xs text-gray-700 dark:text-gray-300'>
               <strong>Mochi</strong> đã yêu cầu follow bạn.
             </p>
           </div>
@@ -95,7 +95,7 @@ const Followers = () => {
           className={`max-w-[600px] dark:bg-[#212121] h-screen mx-auto bg-white transition-all duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
         >
-          <div className='p-2 flex items-center gap-x-2  mb-2  bg-white'>
+          <div className='p-2 flex items-center gap-x-2  mb-2  bg-white dark:bg-black'>
             <button
               onClick={() => setIsOpen(false)}
               className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'
@@ -122,8 +122,8 @@ const Followers = () => {
                 <div className='flex items-center gap-2'>
                   <img src={avatar} alt='' className='w-12 h-12 rounded-full flex-shrink-0' />
                   <div className=''>
-                    <p className='text-sm font-medium'>Vô thượng sát thần</p>
-                    <p className='text-xs text-gray-700'>đã yêu cầu follow bạn</p>
+                    <p className='text-sm font-medium dark:text-white dark:font-normal'>Vô thượng sát thần</p>
+                    <p className='text-xs text-gray-700 dark:text-[#838383]'>đã yêu cầu follow bạn</p>
                   </div>
                 </div>
                 <button className='w-20  bg-[#f85671] rounded-full h-max text-xs font-medium py-1 text-white'>
@@ -220,31 +220,15 @@ const ChatBox = () => {
     }
     reader.readAsDataURL(file)
   }
-  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const imageUrl = reader.result as string
-      const newMsg: any = {
-        id: Date.now(),
-        type: 'image',
-        url: imageUrl,
-        sender: 'me'
-      }
-      setMessages((prev: any) => [...prev, newMsg])
-    }
-    reader.readAsDataURL(file)
-  }
   return (
     <>
       <div onClick={() => setIsOpen(true)} className='flex items-center justify-between cursor-pointer'>
         <div className='flex items-center gap-2'>
           <img src={avatar} alt='' className='w-12 h-12 rounded-full flex-shrink-0' />
           <div className=''>
-            <p className='text-sm font-medium'>Vô thượng sát thần</p>
-            <p className='text-xs text-gray-700'>giá đó hơn lb 300k thôi</p>
+            <p className='text-sm font-medium dark:text-white dark:font-normal'>Vô thượng sát thần</p>
+            <p className='text-xs text-gray-700 dark:text-[#838383]'>giá đó hơn lb 300k thôi</p>
           </div>
         </div>
         <button className='w-6  bg-[#f85699] rounded-full h-max text-[9px] text-white'>13</button>
@@ -262,7 +246,7 @@ const ChatBox = () => {
           className={`max-w-[600px] dark:bg-[#212121] h-screen mx-auto bg-[#f1f1f1] transition-all duration-75 ${isOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
         >
-          <div className='p-2 flex items-center gap-x  m sticky top-0 border-b'>
+          <div className='p-2 flex items-center gap-x  m sticky top-0 border-b dark:border-black/20'>
             <button
               onClick={() => setIsOpen(false)}
               className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'
@@ -282,8 +266,8 @@ const ChatBox = () => {
               <div className='flex items-center gap-2'>
                 <img src={avatar} alt='' className='size-10 rounded-full flex-shrink-0' />
                 <div className=''>
-                  <p className='text-sm font-medium'>Vô thượng sát thần</p>
-                  <p className='text-[10px] text-gray-700'>Hiện đang hoạt động</p>
+                  <p className='text-sm font-medium dark:text-white dark:font-normal'>Vô thượng sát thần</p>
+                  <p className='text-xs text-gray-700 dark:text-[#838383]'>Hiện đang hoạt động</p>
                 </div>
               </div>
             </div>
@@ -294,7 +278,7 @@ const ChatBox = () => {
                 <div
                   className={`max-w-[75%] rounded-xl ${msg.type === 'text' ? 'p-2' : ''} text-sm ${msg.sender === 'me'
                     ? 'bg-[#1590c0] text-white rounded-br-none'
-                    : 'bg-white text-black rounded-bl-none'
+                    : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
                     }`}
                 >
                   {/* Text Message */}
@@ -331,9 +315,17 @@ const ChatBox = () => {
               </div>
             ))}
           </div>
-          <div className='p-2 absolute bottom-0 left-0 right-0 bg-[#f1f1f1]'>
-            <div id='chat-container' className='flex items-center gap-1 bg-white rounded-full px-1 py-0.5'>
-              <label htmlFor="camera-capture">
+          <div className='p-2 absolute bottom-0 left-0 right-0 bg-[#f1f1f1] dark:bg-[#212121]'>
+            <div id='chat-container' className='flex items-center gap-1 bg-white dark:bg-[#333333] rounded-full px-1 py-0.5'>
+              <input
+                type='file'
+                id='file-input'
+                accept='image/*'
+                onChange={handleImageUpload}
+                className='hidden'
+                ref={fileInputRef}
+              />
+              <label htmlFor='file-input'>
                 <button className='bg-blue-300 text-white size-8 rounded-full flex items-center justify-center flex-shrink-0'>
                   <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' className='size-5'>
                     <path d='M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z' />
@@ -344,14 +336,7 @@ const ChatBox = () => {
                     />
                   </svg>
                 </button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment" // camera sau, dùng "user" cho camera trước
-                  id="camera-capture"
-                  onChange={handleCameraCapture}
-                  className="hidden"
-                />
+
               </label>
               <input
                 value={inputValue}
@@ -359,10 +344,10 @@ const ChatBox = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 type='text'
                 placeholder='Nhập tin nhắn...'
-                className='w-full rounded-full p-2 text-sm'
+                className='w-full rounded-full p-2 text-sm dark:text-white'
               />
               <div className='flex gap-1 pr-2'>
-                <button className=' text-black size-8 rounded-full flex items-center justify-center flex-shrink-0'>
+                <button className=' text-black dark:text-white size-8 rounded-full flex items-center justify-center flex-shrink-0'>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
                     fill='none'
@@ -381,7 +366,7 @@ const ChatBox = () => {
 
                 <label
                   htmlFor='file-input'
-                  className={` text-black w-8 h-8 rounded-full flex items-center transition-all duration-300 justify-center flex-shrink-0 ${inputValue ? 'w-0' : 'w-8'
+                  className={` text-black dark:text-white w-8 h-8 rounded-full flex items-center transition-all duration-300 justify-center flex-shrink-0 ${inputValue ? 'w-0' : 'w-8'
                     }`}
                 >
 
@@ -400,14 +385,7 @@ const ChatBox = () => {
                     />
                   </svg>
                 </label>
-                <input
-                  type='file'
-                  id='file-input'
-                  accept='image/*'
-                  onChange={handleImageUpload}
-                  className='hidden'
-                  ref={fileInputRef}
-                />
+
                 <button
                   onClick={handleSendMessage}
                   className={`bg-[#f85671] text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${inputValue ? 'w-8' : 'w-0'
@@ -423,6 +401,7 @@ const ChatBox = () => {
                   </svg>
                 </button>
               </div>
+
             </div>
           </div>
         </div>
