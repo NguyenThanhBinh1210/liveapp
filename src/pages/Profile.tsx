@@ -348,6 +348,7 @@ const Balance = () => {
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
+
       <button
         onClick={() => setIsOpen(true)}
         className='bg-gray-100 hover:bg-gray-200  transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'
