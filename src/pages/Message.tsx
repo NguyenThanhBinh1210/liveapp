@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { PlayIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import avatar from '~/assets/4sand.avif'
+import { CustomAudioPlayer } from '~/components/CustomAudioPlayer'
 
 const Message = () => {
   return (
@@ -221,6 +223,8 @@ const ChatBox = () => {
     reader.readAsDataURL(file)
   }
 
+
+
   return (
     <>
       <div onClick={() => setIsOpen(true)} className='flex items-center justify-between cursor-pointer'>
@@ -306,10 +310,7 @@ const ChatBox = () => {
 
                   {/* Audio */}
                   {msg.type === 'audio' && (
-                    <audio controls className='w-full mt-1'>
-                      <source src={msg.url} type='audio/mpeg' />
-                      Trình duyệt không hỗ trợ audio
-                    </audio>
+                    <CustomAudioPlayer url={msg.url} sender={msg.sender} />
                   )}
                 </div>
               </div>
