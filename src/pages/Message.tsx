@@ -162,8 +162,8 @@ const ChatBox = () => {
     { id: 10, type: 'text', text: 'Mèo cưng ghê', sender: 'me' },
     { id: 11, type: 'text', text: 'Mèo cưng ghê nhưng mà mèo cưng lắm hahs', sender: 'me' }
   ]
-
   const [messages, setMessages] = useState<any>(initialMessages)
+
   const handleSendMessage = () => {
     const trimmed = inputValue.trim()
     if (!trimmed) return
@@ -201,7 +201,42 @@ const ChatBox = () => {
       })
     }
   }, [])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const imageUrl = reader.result as string
+      const newMsg: any = {
+        id: Date.now(),
+        type: 'image',
+        url: imageUrl,
+        sender: 'me'
+      }
+      setMessages((prev: any) => [...prev, newMsg])
+    }
+    reader.readAsDataURL(file)
+  }
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const imageUrl = reader.result as string
+      const newMsg: any = {
+        id: Date.now(),
+        type: 'image',
+        url: imageUrl,
+        sender: 'me'
+      }
+      setMessages((prev: any) => [...prev, newMsg])
+    }
+    reader.readAsDataURL(file)
+  }
   return (
     <>
       <div onClick={() => setIsOpen(true)} className='flex items-center justify-between cursor-pointer'>
@@ -298,16 +333,26 @@ const ChatBox = () => {
           </div>
           <div className='p-2 absolute bottom-0 left-0 right-0 bg-[#f1f1f1]'>
             <div id='chat-container' className='flex items-center gap-1 bg-white rounded-full px-1 py-0.5'>
-              <button className='bg-blue-300 text-white size-8 rounded-full flex items-center justify-center flex-shrink-0'>
-                <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' className='size-5'>
-                  <path d='M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z' />
-                  <path
-                    fillRule='evenodd'
-                    d='M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z'
-                    clipRule='evenodd'
-                  />
-                </svg>
-              </button>
+              <label htmlFor="camera-capture">
+                <button className='bg-blue-300 text-white size-8 rounded-full flex items-center justify-center flex-shrink-0'>
+                  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' className='size-5'>
+                    <path d='M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z' />
+                    <path
+                      fillRule='evenodd'
+                      d='M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z'
+                      clipRule='evenodd'
+                    />
+                  </svg>
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment" // camera sau, dùng "user" cho camera trước
+                  id="camera-capture"
+                  onChange={handleCameraCapture}
+                  className="hidden"
+                />
+              </label>
               <input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -333,31 +378,13 @@ const ChatBox = () => {
                     />
                   </svg>
                 </button>
-                <button className=' text-black size-8 rounded-full flex items-center justify-center flex-shrink-0'>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    strokeWidth={1.5}
-                    stroke='currentColor'
-                    className='size-6'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      d='M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z'
-                    />
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      d='M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z'
-                    />
-                  </svg>
-                </button>
-                <button
+
+                <label
+                  htmlFor='file-input'
                   className={` text-black w-8 h-8 rounded-full flex items-center transition-all duration-300 justify-center flex-shrink-0 ${inputValue ? 'w-0' : 'w-8'
                     }`}
                 >
+
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
                     fill='none'
@@ -372,7 +399,15 @@ const ChatBox = () => {
                       d='m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z'
                     />
                   </svg>
-                </button>
+                </label>
+                <input
+                  type='file'
+                  id='file-input'
+                  accept='image/*'
+                  onChange={handleImageUpload}
+                  className='hidden'
+                  ref={fileInputRef}
+                />
                 <button
                   onClick={handleSendMessage}
                   className={`bg-[#f85671] text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${inputValue ? 'w-8' : 'w-0'
