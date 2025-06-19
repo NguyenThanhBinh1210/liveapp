@@ -7,6 +7,7 @@ import fingerHeart from '~/assets/Finger Heart.webp'
 import rosa from '~/assets/Rosa.webp'
 import heartSignal from '~/assets/Heart Signal.webp'
 import dripBrewing from '~/assets/Drip Brewing.webp'
+import { Recharge } from './Profile'
 
 const LiveId = () => {
   return (
@@ -491,7 +492,7 @@ const SendGift = () => {
                 ))}
               </div>
               <div className='flex items-center gap-2'>
-                <button className='bg-white/10 rounded-md p-2 py-1 text-sm text-white flex items-center gap-1'>
+                <Recharge className='bg-white/10 rounded-md p-2 py-1 text-sm text-white flex items-center gap-1'>
                   <svg
                     className='tiktok-alwu5 e1nmbihp16'
                     width='1em'
@@ -525,7 +526,7 @@ const SendGift = () => {
                   >
                     <path strokeLinecap='round' strokeLinejoin='round' d='m8.25 4.5 7.5 7.5-7.5 7.5' />
                   </svg>
-                </button>
+                </Recharge>
               </div>
             </div>
           </div>

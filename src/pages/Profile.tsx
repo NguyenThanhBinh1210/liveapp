@@ -254,15 +254,15 @@ const Withdraw = () => {
     </>
   )
 }
-const Recharge = () => {
+export const Recharge = ({ children, className }: { children?: React.ReactNode, className?: string }) => {
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className='bg-gray-100 hover:bg-gray-200  transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'
+        className={`${className ? className : 'bg-gray-100 hover:bg-gray-200  transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'}`}
       >
-        Nạp tiền
+        {children ? children : 'Nạp tiền'}
       </button>
       <div
         onClick={(e) => {
@@ -353,6 +353,7 @@ const Balance = () => {
         onClick={() => setIsOpen(true)}
         className='bg-gray-100 hover:bg-gray-200  transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'
       >
+
         Quản lý số dư
       </button>
       <div
