@@ -3,8 +3,8 @@
   "popular": "Thịnh hành",
   "view_more": "Xem thêm",
   "start": "Bắt đầu",
-  "message": "Tin nhắn",
-  "member": "Hội viên",
+  "message": "Hộp thư",
+  "member": "Hồ sơ",
   "search": "Tìm kiếm",
   "member_following": "người đang theo dõi",
   "enter": "Nhập",
@@ -47,5 +47,8 @@
   "money_received_from_gifts": "Tiền thu được từ quà tặng",
   "direct_broadcast_revenue": "Doanh thu phát sóng trực tiếp",
   "collect": "Thu thập",
-  "expense": "Chi tiêu"
+  "expense": "Chi tiêu",
+  "trading_assistant": "Trợ lý giao dịch",
+  "deposit": "Nạp tiền",
+  "system_notification": "Thông báo hệ thống"
 }

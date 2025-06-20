@@ -7,7 +7,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { AppProvider } from './contexts/app.context'
 import React from 'react'
 import './i18n'
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -15,6 +14,7 @@ const queryClient = new QueryClient({
     }
   }
 })
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>

@@ -47,5 +47,8 @@
   "money_received_from_gifts": "Money received from gifts",
   "direct_broadcast_revenue": "Direct broadcast revenue",
   "collect": "Collect",
-  "expense": "Expense"
+  "expense": "Expense",
+  "trading_assistant": "Trading assistant",
+  "deposit": "Deposit",
+  "system_notification": "System notification"
 }

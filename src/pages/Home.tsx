@@ -71,6 +71,8 @@ const Home = () => {
     newLiked[index] = !newLiked[index]
     setLiked(newLiked)
   }
+
+
   return (
     <div className=' '>
       <Swiper
@@ -92,6 +94,7 @@ const Home = () => {
           </SwiperSlide>
         ))}
       </Swiper>
+
       <section className='max-w-[600px] mx-auto grid grid-cols-2 gap-4 p-2'>
         <p className=' text-black dark:text-white col-span-2 text-xl font-bold flex items-center gap-2'>
           <img src={dexuat} alt='dexuat' className='w-7 h-7' />
