@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react'
 import avatar from '~/assets/4sand.avif'
 import { CustomAudioPlayer } from '~/components/CustomAudioPlayer'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 const Message = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   return (
     <div>
       <div className='p-2 flex items-center gap-x-2  mb-2 justify-between sticky top-0 bg-white dark:bg-black'>
-        <button className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'>
+        <button onClick={() => navigate('/')} className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
             fill='none'
@@ -297,8 +299,8 @@ const ChatBox = () => {
               <div key={msg.id} className={`flex mt-auto ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[75%] rounded-xl ${msg.type === 'text' ? 'p-2' : ''} text-sm ${msg.sender === 'me'
-                      ? 'bg-[#1590c0] text-white rounded-br-none'
-                      : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
+                    ? 'bg-[#1590c0] text-white rounded-br-none'
+                    : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
                     }`}
                 >
                   {/* Text Message */}

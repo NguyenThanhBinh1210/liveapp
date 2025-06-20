@@ -3,27 +3,20 @@ import logo from '~/assets/n_ic_logo.9f6f20911258714f7de0.webp'
 import DarkModeToggle from '../DarkMode'
 import { useTranslation } from 'react-i18next'
 const Header = () => {
-  const { i18n } = useTranslation()
-
+  // bg-[#12121271]
   return (
-    <header className='fixed top-0 left-1/2 w-full -translate-x-1/2  z-50 bg-[#12121271] dark:bg-black transition-all duration-300 max-w-[600px]  '>
+    <header className='fixed top-0 left-1/2 w-full -translate-x-1/2  bg-transparent z-50  dark:bg-black transition-all duration-300 max-w-[600px]  '>
       <div className='flex items-center justify-between px-4 py-2'>
         <div className='flex items-center gap-2'>
           <img src={logo} alt='logo' className='w-[84px]' />
         </div>
-        <div className='flex gap-2'>
+        <div className='flex gap-2 items-center'>
+          <LanguageSwitcher />
+
           <DarkModeToggle />
           <SearchButton />
         </div>
       </div>
-      <select
-        value={i18n.language}
-        onChange={(e) => i18n.changeLanguage(e.target.value)}
-        className='ml-2 border rounded px-2 py-1 text-white'
-      >
-        <option className='texxt-black bg-black' value='vi'>🇻🇳 VI</option>
-        <option className='texxt-black bg-black' value='en'>🇺🇸 EN</option>
-      </select>
     </header>
   )
 }
@@ -165,7 +158,7 @@ const SearchButton = () => {
         </svg>
       </button>
       <div
-        className={`fixed  left-0 w-full -translate-y-2 h-screen bg-white dark:bg-[#212121]  z-50 px-4 py-2 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        className={`fixed  left-0 w-full  h-screen top-0  bg-white dark:bg-[#212121]  z-50 px-4 py-2 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
       >
         <div className='max-w-[1060px] mx-auto'>
@@ -223,4 +216,95 @@ const SearchButton = () => {
 //     </div>
 //   )
 // }
+
+const LanguageSwitcher = () => {
+  const { i18n } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const USFlag = ({ size = 24 }: { size?: number }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" width={size} height={size}>
+      <rect width="64" height="48" fill="#b22234" />
+      <g fill="#fff">
+        <rect y="4" width="64" height="4" />
+        <rect y="12" width="64" height="4" />
+        <rect y="20" width="64" height="4" />
+        <rect y="28" width="64" height="4" />
+        <rect y="36" width="64" height="4" />
+        <rect y="44" width="64" height="4" />
+      </g>
+      <rect width="25.6" height="19.2" fill="#3c3b6e" />
+      <g fill="#fff">
+        {/* simplified stars */}
+        {[...Array(5)].map((_, row) =>
+          [...Array(row % 2 === 0 ? 6 : 5)].map((_, col) => {
+            const x = 2 + col * 4.4 + (row % 2 === 0 ? 0 : 2.2)
+            const y = 2 + row * 3.2
+            return <circle key={`${row}-${col}`} cx={x} cy={y} r={0.6} />
+          })
+        )}
+      </g>
+    </svg>
+  )
+
+  const languages = [
+    {
+      code: 'vi', label: 'Tiếng Việt', icon: <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 640 480"
+        width="24"
+        height="24"
+      >
+        <rect width="640" height="480" fill="#da251d" />
+        <polygon
+          fill="#ff0"
+          points="320,120 
+                347,220 
+                450,220 
+                368,280 
+                395,380 
+                320,320 
+                245,380 
+                272,280 
+                190,220 
+                293,220"
+        />
+      </svg>
+    },
+    { code: 'en', label: 'English', icon: <USFlag /> }
+  ]
+
+  const currentLang = languages.find((l) => l.code === i18n.language) || languages[0]
+
+  const changeLanguage = (code: string) => {
+    i18n.changeLanguage(code)
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative inline-block text-left">
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2   text-white px-1 py-1 rounded- text-sm"
+      >
+        {currentLang.icon}
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute right-0 mt-2 w-36 bg-white text-black rounded-md shadow-lg z-50 dark:bg-black dark:text-white">
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => changeLanguage(lang.code)}
+              className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm rounded-md dark:text-white dark:bg-black dark:hover:bg-[#333333]"
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default Header
