@@ -9,8 +9,9 @@ import dexuat from '~/assets/dexuat.webp'
 import { useState } from 'react'
 import { Eye, Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
+import { useTranslation } from 'react-i18next'
 const Home = () => {
+  const { t } = useTranslation()
   const images = [bannerhome1, bannerhome2, bannerhome3]
   const livestreams = [
     {
@@ -94,7 +95,7 @@ const Home = () => {
       <section className='max-w-[600px] mx-auto grid grid-cols-2 gap-4 p-2'>
         <p className=' text-black dark:text-white col-span-2 text-xl font-bold flex items-center gap-2'>
           <img src={dexuat} alt='dexuat' className='w-7 h-7' />
-          Đề xuất cho bạn
+          {t('recommended_for_you')}
         </p>
         {livestreams.slice(0, 4).map((item, idx) => (
           <Link
@@ -121,7 +122,7 @@ const Home = () => {
             </div>
           </Link>
         ))}
-        <p className=' text-black dark:text-white col-span-2 text-xl font-bold flex items-center gap-2'>Thịnh hành</p>
+        <p className=' text-black dark:text-white col-span-2 text-xl font-bold flex items-center gap-2'>{t('popular')}</p>
         {livestreams.map((item, idx) => (
           <Link
             to={`/live/${item.name}`}
@@ -149,7 +150,7 @@ const Home = () => {
         ))}
         <div className='col-span-2 mb-20'>
           <button className='bg-[#fe47be] text-white px-4 py-2 rounded-xl font-medium max-w-[300px] mx-auto block'>
-            Xem thêm
+            {t('view_more')}
           </button>
         </div>
       </section>

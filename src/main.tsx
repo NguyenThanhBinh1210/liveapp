@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { AppProvider } from './contexts/app.context'
 import React from 'react'
+import './i18n'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

@@ -8,15 +8,16 @@ import rosa from '~/assets/Rosa.webp'
 import heartSignal from '~/assets/Heart Signal.webp'
 import dripBrewing from '~/assets/Drip Brewing.webp'
 import { Recharge } from './Profile'
-
+import { useTranslation } from 'react-i18next'
 const LiveId = () => {
+  const { t } = useTranslation()
   return (
     <div className='max-w-[600px] mx-auto w-full bg-black min-h-screen relative'>
       <div className='absolute top-2 left-2 w-max z-10 flex items-center justify-between gap-2'>
         <img src={avatar} alt='' className='size-10 rounded-full object-cover' />
         <div>
           <p className='text-white text-sm'>John Doe</p>
-          <p className='text-gray-300 text-xs'>1 người đang theo dõi</p>
+          <p className='text-gray-300 text-xs'>1 {t('member_following')}</p>
         </div>
         <button className=' rounded-full bg-white  p-2 text-orange-500'>
           <HeartPlus className='size-4 text-orange-500' />
@@ -84,10 +85,10 @@ const LiveId = () => {
           <input
             type='text'
             className='w-full outline-none h-10 text-sm  !bg-white/10 rounded-xl p-2  text-white'
-            placeholder='Nhập...'
+            placeholder={t('enter')}
           />
           <button type='submit' className='hidden'>
-            Gửi
+            {t('send')}
           </button>
         </form>
         <SendGift></SendGift>
@@ -100,7 +101,7 @@ const LiveId = () => {
 }
 const ListUser = () => {
   const panelRef = useRef<HTMLDivElement>(null)
-
+  const { t } = useTranslation()
   const [show, setShow] = useState(false)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -134,7 +135,7 @@ const ListUser = () => {
           } transition-all duration-300`}
       >
         <p className='text-center font-medium absolute top-2 left-1/2 -translate-x-1/2 w-full'>
-          Dánh sách người xem hàng đầu
+          {t('list_of_top_viewers')}
         </p>
         <div className='overflow-y-scroll scrollbar-hidden h-[calc(100%-40px)]'>
           <div className='flex flex-col gap-2 '>
@@ -154,7 +155,7 @@ const ListUser = () => {
                     <div className='flex items-center gap-2'>
                       {(index === 0 || index === 1 || index === 2) && (
                         <div className='text-white bg-[#fe47be] rounded-md w-max px-1 py-0.5 flex items-center gap-1 text-xs'>
-                          Hạng {index + 1}
+                          {t('rank')} {index + 1}
                         </div>
                       )}
                       <div className='text-white bg-blue-500 rounded-md w-max px-1 py-0.5 flex items-center gap-1 text-xs'>
@@ -175,6 +176,7 @@ const ListUser = () => {
 }
 
 const SendGift = () => {
+  const { t } = useTranslation()
   const giftList = [
     {
       id: 1,
@@ -298,7 +300,7 @@ const SendGift = () => {
     },
     {
       id: 2,
-      name: 'Cổ điển',
+      name: t('classic'),
       items: [
         {
           id: 1,
@@ -328,7 +330,7 @@ const SendGift = () => {
     },
     {
       id: 3,
-      name: 'Quý tộc',
+      name: t('noble'),
       items: [
         {
           id: 1,
@@ -409,7 +411,7 @@ const SendGift = () => {
         className={`fixed z-10 max-w-[600px] flex flex-col justify-end left-1/2 -translate-x-1/2 w-full h-[calc(100vh/2)] bg-[#2d2d2d]  p-2 ${show ? '-bottom-0' : '-bottom-full'
           } transition-all duration-300`}
       >
-        <p className='text-center font-medium absolute top-2 left-1/2 -translate-x-1/2 w-full text-white'>Chọn quà</p>
+        <p className='text-center font-medium absolute top-2 left-1/2 -translate-x-1/2 w-full text-white'>{t('choose_gift')}</p>
         <div className='overflow-y-scroll scrollbar-hidden h-[calc(100%-40px)]'>
           <div className='flex flex-col h-full'>
             {/* Tabs header */}
@@ -470,7 +472,7 @@ const SendGift = () => {
                       </p>
                       {choosenGift?.id === item.id && (
                         <div className='text-xs text-white bg-[#ff3b5c] mt-1 text-center w-full py-0.5 text-[10px] rounded-b-md'>
-                          Gửi
+                          {t('send')}
                         </div>
                       )}
                     </div>

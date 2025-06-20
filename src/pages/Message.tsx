@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from 'react'
 import avatar from '~/assets/4sand.avif'
 import { CustomAudioPlayer } from '~/components/CustomAudioPlayer'
-
+import { useTranslation } from 'react-i18next'
 const Message = () => {
+  const { t } = useTranslation()
   return (
     <div>
       <div className='p-2 flex items-center gap-x-2  mb-2 justify-between sticky top-0 bg-white dark:bg-black'>
@@ -19,7 +20,7 @@ const Message = () => {
             <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5 8.25 12l7.5-7.5' />
           </svg>
         </button>
-        <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>Hộp thư</h2>
+        <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>{t('message_box')}</h2>
         <button className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
@@ -49,6 +50,7 @@ const Message = () => {
 }
 
 const Followers = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   useEffect(() => {
     if (isOpen) {
@@ -67,9 +69,9 @@ const Followers = () => {
             </svg>
           </div>
           <div className=''>
-            <p className='text-sm font-medium dark:text-white'>Những Follower mới</p>
+            <p className='text-sm font-medium dark:text-white'>{t('new_followers')}</p>
             <p className='text-xs text-gray-700 dark:text-gray-300'>
-              <strong>Mochi</strong> đã yêu cầu follow bạn.
+              <strong>Mochi</strong> {t('requested_follow')}
             </p>
           </div>
         </div>
@@ -113,8 +115,7 @@ const Followers = () => {
               </svg>
             </button>
             <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>
-              {' '}
-              Những Follower mới
+              {t('new_followers')}
             </h2>
           </div>
           <div className='p-2 px-4 space-y-3  overflow-y-auto h-[calc(100vh-60px)] pb-4'>
@@ -124,11 +125,11 @@ const Followers = () => {
                   <img src={avatar} alt='' className='w-12 h-12 rounded-full flex-shrink-0' />
                   <div className=''>
                     <p className='text-sm font-medium dark:text-white dark:font-normal'>Vô thượng sát thần</p>
-                    <p className='text-xs text-gray-700 dark:text-[#838383]'>đã yêu cầu follow bạn</p>
+                    <p className='text-xs text-gray-700 dark:text-[#838383]'>{t('requested_follow')}</p>
                   </div>
                 </div>
                 <button className='w-20  bg-[#f85671] rounded-full h-max text-xs font-medium py-1 text-white'>
-                  Chấp nhận
+                  {t('accept')}
                 </button>
               </div>
             ))}
@@ -141,6 +142,7 @@ const Followers = () => {
 
 const ChatBox = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const { t } = useTranslation()
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -221,9 +223,24 @@ const ChatBox = () => {
     }
     reader.readAsDataURL(file)
   }
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const imageUrl = reader.result as string
+      const newMsg = {
+        id: Date.now(),
+        type: 'image',
+        url: imageUrl,
+        sender: 'me'
+      }
+      setMessages((prev: any) => [...prev, newMsg])
+    }
 
-
+    reader.readAsDataURL(file)
+  }
   return (
     <>
       <div onClick={() => setIsOpen(true)} className='flex items-center justify-between cursor-pointer'>
@@ -270,7 +287,7 @@ const ChatBox = () => {
                 <img src={avatar} alt='' className='size-10 rounded-full flex-shrink-0' />
                 <div className=''>
                   <p className='text-sm font-medium dark:text-white dark:font-normal'>Vô thượng sát thần</p>
-                  <p className='text-xs text-gray-700 dark:text-[#838383]'>Hiện đang hoạt động</p>
+                  <p className='text-xs text-gray-700 dark:text-[#838383]'>{t('online')}</p>
                 </div>
               </div>
             </div>
@@ -280,8 +297,8 @@ const ChatBox = () => {
               <div key={msg.id} className={`flex mt-auto ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[75%] rounded-xl ${msg.type === 'text' ? 'p-2' : ''} text-sm ${msg.sender === 'me'
-                    ? 'bg-[#1590c0] text-white rounded-br-none'
-                    : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
+                      ? 'bg-[#1590c0] text-white rounded-br-none'
+                      : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
                     }`}
                 >
                   {/* Text Message */}
@@ -308,15 +325,16 @@ const ChatBox = () => {
                   )}
 
                   {/* Audio */}
-                  {msg.type === 'audio' && (
-                    <CustomAudioPlayer url={msg.url} sender={msg.sender} />
-                  )}
+                  {msg.type === 'audio' && <CustomAudioPlayer url={msg.url} sender={msg.sender} />}
                 </div>
               </div>
             ))}
           </div>
           <div className='p-2 absolute bottom-0 left-0 right-0 bg-[#f1f1f1] dark:bg-[#212121]'>
-            <div id='chat-container' className='flex items-center gap-1 bg-white dark:bg-[#333333] rounded-full px-1 py-0.5'>
+            <div
+              id='chat-container'
+              className='flex items-center gap-1 bg-white dark:bg-[#333333] rounded-full px-1 py-0.5'
+            >
               <input
                 type='file'
                 id='file-input'
@@ -325,7 +343,7 @@ const ChatBox = () => {
                 className='hidden'
                 ref={fileInputRef}
               />
-              <label htmlFor='file-input'>
+              {/* <label htmlFor='file-input'>
                 <button className='bg-blue-300 text-white size-8 rounded-full flex items-center justify-center flex-shrink-0'>
                   <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' className='size-5'>
                     <path d='M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z' />
@@ -337,13 +355,34 @@ const ChatBox = () => {
                   </svg>
                 </button>
 
+              </label> */}
+              <label
+                htmlFor='file-input-camera'
+                className={` bg-blue-300 text-white size-8 rounded-full flex items-center justify-center flex-shrink-0`}
+              >
+                <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' className='size-5'>
+                  <path d='M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z' />
+                  <path
+                    fillRule='evenodd'
+                    d='M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z'
+                    clipRule='evenodd'
+                  />
+                </svg>
               </label>
+              <input
+                type='file'
+                id='file-input-camera'
+                accept='image/*'
+                capture='environment' // 👈 Mở camera sau (dùng "user" nếu muốn camera trước)
+                className='hidden'
+                onChange={handleCameraCapture}
+              />
               <input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 type='text'
-                placeholder='Nhập tin nhắn...'
+                placeholder={t('enter_message')}
                 className='w-full rounded-full p-2 text-sm dark:text-white'
               />
               <div className='flex gap-1 pr-2'>
@@ -366,10 +405,9 @@ const ChatBox = () => {
 
                 <label
                   htmlFor='file-input'
-                  className={` text-black dark:text-white w-8 h-8 rounded-full flex items-center transition-all duration-300 justify-center flex-shrink-0 ${inputValue ? 'w-0' : 'w-8'
+                  className={` text-black dark:text-white w-8 h-8 rounded-full flex items-center transition-all duration-300 justify-center flex-shrink-0 ${inputValue ? 'w-0' : '!w-8'
                     }`}
                 >
-
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
                     fill='none'
@@ -388,7 +426,7 @@ const ChatBox = () => {
 
                 <button
                   onClick={handleSendMessage}
-                  className={`bg-[#f85671] text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${inputValue ? 'w-8' : 'w-0'
+                  className={`bg-[#f85671] text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${inputValue ? 'w-8' : '!w-0'
                     }`}
                 >
                   <svg
@@ -401,7 +439,6 @@ const ChatBox = () => {
                   </svg>
                 </button>
               </div>
-
             </div>
           </div>
         </div>

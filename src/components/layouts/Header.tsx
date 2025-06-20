@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import logo from '~/assets/n_ic_logo.9f6f20911258714f7de0.webp'
 import DarkModeToggle from '../DarkMode'
+import { useTranslation } from 'react-i18next'
 const Header = () => {
+  const { i18n } = useTranslation()
+
   return (
     <header className='fixed top-0 left-1/2 w-full -translate-x-1/2  z-50 bg-[#12121271] dark:bg-black transition-all duration-300 max-w-[600px]  '>
       <div className='flex items-center justify-between px-4 py-2'>
         <div className='flex items-center gap-2'>
-
           <img src={logo} alt='logo' className='w-[84px]' />
         </div>
         <div className='flex gap-2'>
@@ -14,6 +16,14 @@ const Header = () => {
           <SearchButton />
         </div>
       </div>
+      <select
+        value={i18n.language}
+        onChange={(e) => i18n.changeLanguage(e.target.value)}
+        className='ml-2 border rounded px-2 py-1 text-white'
+      >
+        <option className='texxt-black bg-black' value='vi'>🇻🇳 VI</option>
+        <option className='texxt-black bg-black' value='en'>🇺🇸 EN</option>
+      </select>
     </header>
   )
 }
@@ -127,6 +137,7 @@ const Header = () => {
 //   )
 // }
 const SearchButton = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   useEffect(() => {
     if (isOpen) {
@@ -175,9 +186,8 @@ const SearchButton = () => {
             <input
               type='text'
               className='w-full    text-black dark:text-white  px-2 h-[46px] rounded-[10px]  pr-4'
-              placeholder='Tìm kiếm'
+              placeholder={t('search')}
             />
-
           </div>
         </div>
       </div>

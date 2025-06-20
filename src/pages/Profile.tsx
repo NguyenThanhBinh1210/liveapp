@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import avatar from '~/assets/4sand.avif'
+import { useTranslation } from 'react-i18next'
 const Profile = () => {
+  const { t } = useTranslation()
   return (
     <div className='pt-20'>
       <div className='flex items-center justify-center'>
@@ -10,22 +12,22 @@ const Profile = () => {
           <p className='text-xs  text-gray-400 mb-1.5'>#254</p>
           <div className='flex items-center gap-2 text-xs'>
             <p className='bg-[#fe47be] rounded-md text-white px-2 py-0.5'>Lv1</p>
-            <p className='bg-[#fe9f47] rounded-md text-white px-2 py-0.5'>Thành viên</p>
+            <p className='bg-[#fe9f47] rounded-md text-white px-2 py-0.5'>{t('member')}</p>
           </div>
         </div>
       </div>
       <div className='grid grid-cols-3 gap-4 max-w-[400px] mx-auto mt-4'>
         <div className='col-span-1 flex flex-col items-center '>
           <p className='text-lg font-bold dark:text-white'>1</p>
-          <p className=' text-xs text-gray-400'>Đã follow</p>
+          <p className=' text-xs text-gray-400'>{t('followed')}</p>
         </div>
         <div className='col-span-1 flex flex-col items-center '>
           <p className='text-lg font-bold dark:text-white'>2</p>
-          <p className=' text-xs text-gray-400'>Followers</p>
+          <p className=' text-xs text-gray-400'>{t('followers')}</p>
         </div>
         <div className='col-span-1 flex flex-col items-center '>
           <p className='text-lg font-bold dark:text-white'>3</p>
-          <p className=' text-xs text-gray-400'>Thích</p>
+          <p className=' text-xs text-gray-400'>{t('like')}</p>
         </div>
       </div>
       <div className='mt-4 flex gap-x-2 max-w-[400px] mx-auto'>
@@ -37,7 +39,7 @@ const Profile = () => {
 
       <div className='mt-4 border-t dark:border-black/30 pt-4'>
         <button className='bg-[#fe47be] mt-20 hover:bg-[#fe47be]/80 transition-all duration-300 block mx-auto text-white font-medium w-[200px] text-sm px-4 py-2 rounded-md'>
-          Đăng xuất
+          {t('logout')}
         </button>
       </div>
     </div>
@@ -45,6 +47,7 @@ const Profile = () => {
 }
 
 const EditProfile = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
@@ -52,7 +55,7 @@ const EditProfile = () => {
         onClick={() => setIsOpen(true)}
         className='bg-gray-100 hover:bg-gray-200  transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'
       >
-        Sửa hồ sơ
+        {t('edit_profile')}
       </button>
       <div
         onClick={(e) => {
@@ -83,7 +86,7 @@ const EditProfile = () => {
                 <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5 8.25 12l7.5-7.5' />
               </svg>
             </button>
-            <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>Sửa hồ sơ</h2>
+            <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>{t('edit_profile')}</h2>
           </div>
           <div className='flex flex-col items-center justify-center '>
             <div className='relative'>
@@ -114,12 +117,12 @@ const EditProfile = () => {
                 <input type='file' id='avatar' className='hidden' />
               </label>
             </div>
-            <p className='text-xs  text-gray-500 mb-1.5 dark:text-gray-300'>Thay đổi ảnh</p>
+            <p className='text-xs  text-gray-500 mb-1.5 dark:text-gray-300'>{t('change_avatar')}</p>
           </div>
           <div className='px-4 mt-2'>
-            <p className='text-sm font-medium dark:text-white mb-5'>Giới thiệu về bạn</p>
+            <p className='text-sm font-medium dark:text-white mb-5'>{t('introduce_about_you')}</p>
             <div className='flex items-center justify-between gap-x-2 mb-2'>
-              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>Tên</p>
+              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('name')}</p>
               <input
                 defaultValue={'John Doe'}
                 type='text'
@@ -127,7 +130,7 @@ const EditProfile = () => {
               />
             </div>
             <div className='flex items-center justify-between gap-x-2 mb-2'>
-              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>Sinh nhật</p>
+              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('birthday')}</p>
               <input
                 defaultValue={'12/10/2002'}
                 type='text'
@@ -135,13 +138,13 @@ const EditProfile = () => {
               />
             </div>
             <div className='flex items-center justify-between gap-x-2 mb-2'>
-              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>Giới tính</p>
+              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('gender')}</p>
               <select className='w-max text-right rounded-md p-2  dark:text-white text-sm'>
                 <option value='male' className='text-sm text-black dark:text-black'>
-                  Nam
+                  {t('male')}
                 </option>
                 <option value='female' className='text-sm text-black dark:text-black'>
-                  Nữ
+                  {t('female')}
                 </option>
               </select>
             </div>
@@ -152,6 +155,7 @@ const EditProfile = () => {
   )
 }
 const Withdraw = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
@@ -203,16 +207,16 @@ const Withdraw = () => {
                 <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5 8.25 12l7.5-7.5' />
               </svg>
             </button>
-            <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>Rút tiền</h2>
+            <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>{t('withdraw')}</h2>
           </div>
           <div className='flex flex-col items-center justify-center '>
-            <p className='text-xs  text-gray-500 mb-1.5 dark:text-gray-300'>Số dư có thể rút</p>
+            <p className='text-xs  text-gray-500 mb-1.5 dark:text-gray-300'>{t('balance_can_withdraw')}</p>
             <p className='text-2xl font-bold dark:text-white mb-5'>100000.000</p>
           </div>
           <div className='px-4 mt-2'>
-            <p className='text-sm font-medium dark:text-white mb-5'>Thông tin rút tiền</p>
+            <p className='text-sm font-medium dark:text-white mb-5'>{t('withdraw_information')}</p>
             <div className='flex items-center justify-between gap-x-2 mb-1'>
-              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>Tên tài khoản</p>
+              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('account_name')}</p>
               <input
                 defaultValue={'John Doe'}
                 type='text'
@@ -220,7 +224,7 @@ const Withdraw = () => {
               />
             </div>
             <div className='flex items-center justify-between gap-x-2 mb-1'>
-              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>Ngân hàng</p>
+              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('bank')}</p>
               <input
                 type='text'
                 placeholder='Vietcombank'
@@ -228,7 +232,7 @@ const Withdraw = () => {
               />
             </div>
             <div className='flex items-center justify-between gap-x-2 mb-1'>
-              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>Số thẻ</p>
+              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('card_number')}</p>
               <input
                 type='text'
                 placeholder='1234567890'
@@ -236,7 +240,7 @@ const Withdraw = () => {
               />
             </div>
             <div className='flex items-center justify-between gap-x-2 mb-1'>
-              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>Số tiền rút</p>
+              <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('withdraw_amount')}</p>
               <input
                 type='text'
                 placeholder='100000000'
@@ -245,7 +249,7 @@ const Withdraw = () => {
             </div>
             <div className='flex items-center justify-between gap-x-2 mb-1'>
               <button className='bg-gray-100 hover:bg-gray-200 mx-auto w-[200px] mt-4 transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'>
-                Rút tiền
+                {t('withdraw')}
               </button>
             </div>
           </div>
@@ -255,6 +259,7 @@ const Withdraw = () => {
   )
 }
 export const Recharge = ({ children, className }: { children?: React.ReactNode, className?: string }) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
@@ -262,7 +267,7 @@ export const Recharge = ({ children, className }: { children?: React.ReactNode, 
         onClick={() => setIsOpen(true)}
         className={`${className ? className : 'bg-gray-100 hover:bg-gray-200  transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'}`}
       >
-        {children ? children : 'Nạp tiền'}
+        {children ? children : t('recharge')}
       </button>
       <div
         onClick={(e) => {
@@ -345,6 +350,7 @@ export const Recharge = ({ children, className }: { children?: React.ReactNode, 
   )
 }
 const Balance = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
@@ -353,8 +359,7 @@ const Balance = () => {
         onClick={() => setIsOpen(true)}
         className='bg-gray-100 hover:bg-gray-200  transition-all duration-300 text-black font-medium text-sm px-4 py-2 rounded-md'
       >
-
-        Quản lý số dư
+        {t('manage_balance')}
       </button>
       <div
         onClick={(e) => {
@@ -385,11 +390,11 @@ const Balance = () => {
                 <path strokeLinecap='round' strokeLinejoin='round' d='M15.75 19.5 8.25 12l7.5-7.5' />
               </svg>
             </button>
-            <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>Quản lý số dư</h2>
+            <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>{t('manage_balance')}</h2>
           </div>
           <div className=' w-[calc(100%-32px)] rounded-lg p-2 items-center py-4 mx-auto my-4 flex justify-between bg-black/70 '>
             <div className='text-sm font-medium text-white'>
-              Số tiền trong ví
+              {t('balance_in_wallet')}
               <p className='text-2xl font-bold text-white'>100000.000</p>
             </div>
             <Recharge />
@@ -397,23 +402,23 @@ const Balance = () => {
           <div className='grid grid-cols-3 gap-x-4  mx-auto mt-4 '>
             <div className='col-span-1 flex flex-col items-center '>
               <p className='text-lg font-bold dark:text-white'>1123.000</p>
-              <p className=' text-xs text-gray-400 text-center'>Tổng tiêu thụ</p>
+              <p className=' text-xs text-gray-400 text-center'>{t('total_consumption')}</p>
             </div>
             <div className='col-span-1 flex flex-col items-center '>
               <p className='text-lg font-bold dark:text-white'>1123.000</p>
-              <p className=' text-xs text-gray-400 text-center'>Tiền thu được từ quà tặng</p>
+              <p className=' text-xs text-gray-400 text-center'>{t('money_received_from_gifts')}</p>
             </div>
             <div className='col-span-1 flex flex-col items-center '>
               <p className='text-lg font-bold dark:text-white'>1123.000</p>
-              <p className=' text-xs text-gray-400 text-center'>Doanh thu phát sóng trực tiếp</p>
+              <p className=' text-xs text-gray-400 text-center'>{t('direct_broadcast_revenue')}</p>
             </div>
           </div>
           <div className='px-4 space-y-3'>
             <div className='bg-gray-50 rounded-lg p-3 mt-4'>
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>
-                  <div className='bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max'>Thu thập</div>
-                  <p className='text-sm font-medium '>Quà tặng trực tiếp</p>
+                  <div className='bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max'>{t('collect')}</div>
+                  <p className='text-sm font-medium '>{t('direct_broadcast_revenue')}</p>
                   <p className='text-xs text-gray-400'>2025-06-15 18:53:24</p>
                 </div>
                 <div className='text-end'>
@@ -425,8 +430,8 @@ const Balance = () => {
             <div className='bg-gray-50 rounded-lg p-3 mt-4'>
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>
-                  <div className='bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max'>Thu thập</div>
-                  <p className='text-sm font-medium '>Quà tặng trực tiếp</p>
+                  <div className='bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max'>{t('collect')}</div>
+                  <p className='text-sm font-medium '>{t('direct_broadcast_revenue')}</p>
                   <p className='text-xs text-gray-400'>2025-06-15 18:53:24</p>
                 </div>
                 <div className='text-end'>
@@ -438,8 +443,8 @@ const Balance = () => {
             <div className='bg-gray-50 rounded-lg p-3 mt-4'>
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>
-                  <div className='bg-pink-500 text-white px-2 py-1 rounded-md text-xs w-max'>Chi tiêu</div>
-                  <p className='text-sm font-medium '>Quà tặng trực tiếp</p>
+                  <div className='bg-pink-500 text-white px-2 py-1 rounded-md text-xs w-max'>{t('expense')}</div>
+                  <p className='text-sm font-medium '>{t('direct_broadcast_revenue')}</p>
                   <p className='text-xs text-gray-400'>2025-06-15 18:53:24</p>
                 </div>
                 <div className='text-end'>
