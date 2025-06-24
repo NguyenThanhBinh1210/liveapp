@@ -10,7 +10,10 @@ const Message = () => {
   return (
     <div>
       <div className='p-2 flex items-center gap-x-2  mb-2 justify-between sticky top-0 bg-white dark:bg-black'>
-        <button onClick={() => navigate('/')} className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'>
+        <button
+          onClick={() => navigate('/')}
+          className='p-2 rounded-full dark:text-white hover:bg-gray-200 dark:hover:bg-black/30 transition-all duration-300'
+        >
           <svg
             xmlns='http://www.w3.org/2000/svg'
             fill='none'
@@ -157,10 +160,13 @@ const Notification = () => {
       <div onClick={() => setIsOpen(true)} className='flex items-center justify-between cursor-pointer'>
         <div className='flex items-center gap-2'>
           <div className='bg-[#f85671] rounded-full w-12 h-12 flex items-center justify-center text-white flex-shrink-0'>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-              <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z" clipRule="evenodd" />
+            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' className='size-6'>
+              <path
+                fillRule='evenodd'
+                d='M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z'
+                clipRule='evenodd'
+              />
             </svg>
-
           </div>
           <div className=''>
             <p className='text-sm font-medium dark:text-white'> {t('system_notification')}</p>
@@ -214,25 +220,29 @@ const Notification = () => {
           </div>
           <div className='p-2 px-4 space-y-3  overflow-y-auto h-[calc(100vh-60px)] pb-4 dark:bg-black'>
             {Array.from({ length: 20 }).map((_, index) => (
-              <div key={index} className='flex  justify-between flex-col cursor-pointer px-2 bg-white dark:bg-[#212121]  rounded'>
-                <p className='text-sm font dark:text-white border-b py-2 border-[#f8f8f8] dark:border-black/20'> {t('trading_assistant')}</p>
-                <div className='py-2 space-y-2'>
-
-                  <p className='text-xs text-black dark:text-gray-300 font-medium'>
-                    {t('deposit')}
-                  </p>
-                  <p className='text-xs text-[#3a3a3a] dark:text-gray-300  '>
-                    Bạn đã nạp 1000$ vào tài khoản của bạn
-                  </p>
-                </div>
-                <p className='text-xs font dark:text-white border-t py-3 justify-between border-[#f8f8f8] dark:border-black/20 flex items-center '> Xem thêm
-
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-4">
-                    <path fillRule="evenodd" d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" />
-                  </svg>
-
+              <div
+                key={index}
+                className='flex  justify-between flex-col cursor-pointer px-2 bg-white dark:bg-[#212121]  rounded'
+              >
+                <p className='text-sm font dark:text-white border-b py-2 border-[#f8f8f8] dark:border-black/20'>
+                  {' '}
+                  {t('trading_assistant')}
                 </p>
-
+                <div className='py-2 space-y-2'>
+                  <p className='text-xs text-black dark:text-gray-300 font-medium'>{t('deposit')}</p>
+                  <p className='text-xs text-[#3a3a3a] dark:text-gray-300  '>Bạn đã nạp 1000$ vào tài khoản của bạn</p>
+                </div>
+                <p className='text-xs font dark:text-white border-t py-3 justify-between border-[#f8f8f8] dark:border-black/20 flex items-center '>
+                  {' '}
+                  Xem thêm
+                  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' className='size-4'>
+                    <path
+                      fillRule='evenodd'
+                      d='M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z'
+                      clipRule='evenodd'
+                    />
+                  </svg>
+                </p>
               </div>
             ))}
           </div>
@@ -399,8 +409,8 @@ const ChatBox = () => {
               <div key={msg.id} className={`flex mt-auto ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[75%] rounded-xl ${msg.type === 'text' ? 'p-2' : ''} text-sm ${msg.sender === 'me'
-                    ? 'bg-[#1590c0] text-white rounded-br-none'
-                    : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
+                      ? 'bg-[#1590c0] text-white rounded-br-none'
+                      : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
                     }`}
                 >
                   {/* Text Message */}
