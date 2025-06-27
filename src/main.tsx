@@ -7,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AppProvider } from './contexts/app.context'
 import React from 'react'
 import './i18n'
+import { Toaster } from 'react-hot-toast'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <AppProvider>
           <App />
+          <Toaster />
         </AppProvider>
       </QueryClientProvider>
     </BrowserRouter>

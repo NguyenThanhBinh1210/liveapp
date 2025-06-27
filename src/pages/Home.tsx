@@ -10,6 +10,8 @@ import { useState } from 'react'
 import { Eye, Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { getLive } from '~/apis/live.api'
+import { useQuery } from 'react-query'
 const Home = () => {
   const { t } = useTranslation()
   const images = [bannerhome1, bannerhome2, bannerhome3]
@@ -63,7 +65,30 @@ const Home = () => {
       thumbnail: bannerhome1
     }
   ]
+  interface LiveStream {
+    _id: string
+    streamerId: {
+      _id: string
+      name: string
+      avatar: string
+    },
+    title: string
+    thumbnailUrl: string
+    startedAt: string
+    viewersCount: number
+  }
 
+  const [liveStreams, setLiveStreams] = useState<LiveStream[]>([])
+  useQuery({
+    queryKey: ['livestreams'],
+    queryFn: () => getLive({ page: 1, limit: 10 }),
+    onSuccess: (data) => {
+      setLiveStreams(data.data.data.streams)
+    },
+    onError: (error) => {
+      console.log(error)
+    }
+  })
   const [liked, setLiked] = useState<boolean[]>(Array(livestreams.length).fill(false))
 
   const toggleLike = (index: number) => {
@@ -100,20 +125,20 @@ const Home = () => {
           <img src={dexuat} alt='dexuat' className='w-7 h-7' />
           {t('recommended_for_you')}
         </p>
-        {livestreams.slice(0, 4).map((item, idx) => (
+        {liveStreams.slice(0, 4).map((item, idx) => (
           <Link
-            to={`/live/${item.name}`}
+            to={`/live/${item._id}`}
             key={idx}
             className='rounded-2xl overflow-hidden shadow  hover:scale-[102%] cursor-pointer transition-all relative'
           >
-            <img src={item.thumbnail} alt={item.name} className='w-full aspect-video object-cover' />
+            <img src={item.thumbnailUrl || bannerhome1} alt={item.title} className='w-full aspect-video object-cover' />
             <div className='p-3 absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/50 to-transparent'>
-              <h3 className='text-base font-semibold text-white mb-1'>{item.name}</h3>
-              <p className='text-sm  mb-1 bg-[#fe47be] w-max text-white px-2 rounded-md'>{item.level}</p>
+              <h3 className='text-base font-semibold text-white mb-1'>{item.title}</h3>
+              <p className='text-sm  mb-1 bg-[#fe47be] w-max text-white px-2 rounded-md'>{item.streamerId.name}</p>
               <div className='flex items-center justify-between text-sm text-gray-600 dark:text-gray-300'>
                 <div className='flex items-center gap-1 text-white'>
                   <Eye className='w-4 h-4 stroke-white' />
-                  <span>{item.views}</span>
+                  <span>{item.viewersCount}</span>
                 </div>
                 <button
                   onClick={() => toggleLike(idx)}

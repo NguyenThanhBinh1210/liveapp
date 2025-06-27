@@ -7,7 +7,7 @@ const HomeLayout = ({ children }: LayoutPropsInterface) => {
   const path = useLocation().pathname
   return (
     <div className='max-w-[600px] mx-auto w-full'>
-      {path === '/message' || path === '/profile' ? <></> : <Header></Header>}
+      {path === '/message' || path === '/profile' || path === '/login' ? <></> : <Header></Header>}
       <div className='dark:bg-[#212121] transition-all duration-300 min-h-screen'>{children}</div>
       <Footer />
     </div>

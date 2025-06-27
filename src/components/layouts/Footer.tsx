@@ -1,6 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useContext } from 'react'
+import { AppContext } from '~/contexts/app.context'
 const Footer = () => {
+  const { isAuthenticated } = useContext(AppContext)
+  console.log(isAuthenticated)
   const path = useLocation().pathname
   const { t } = useTranslation()
   return (
@@ -90,8 +94,8 @@ const Footer = () => {
         </div>
         <div className='col-span-1'>
           <Link
-            to={'/profile'}
-            className={`text-xs  flex flex-col items-center justify-center py-2 ${path === '/profile' ? 'text-[#FE47BE]' : 'dark:text-white'}`}
+            to={isAuthenticated ? '/profile' : '/login'}
+            className={`text-xs  flex flex-col items-center justify-center py-2 ${path === '/profile' || path === '/login' ? 'text-[#FE47BE]' : 'dark:text-white'}`}
           >
             <svg
               xmlns='http://www.w3.org/2000/svg'

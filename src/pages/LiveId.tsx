@@ -9,8 +9,38 @@ import heartSignal from '~/assets/Heart Signal.webp'
 import dripBrewing from '~/assets/Drip Brewing.webp'
 import { Recharge } from './Profile'
 import { useTranslation } from 'react-i18next'
+
+
+// interface Live {
+//   _id: string
+//   title: string
+//   description: string
+//   thumbnailUrl: string
+//   status: string
+//   streamerId: {
+//     _id: string
+//     name: string
+//     avatar: string
+//   },
+//   startedAt: string
+//   endedAt: string
+//   playbackUrl: string
+//   viewersCount: number
+//   createdAt: string
+//   updatedAt: string
+// }
 const LiveId = () => {
+  // const { id } = useParams()
   const { t } = useTranslation()
+  // const [live, setLive] = useState<Live | null>(null)
+  // useQuery({
+  //   queryKey: ['live', id],
+  //   queryFn: () => getLiveById(id || ''),
+  //   enabled: !!id,
+  //   onSuccess: (data) => {
+  //     setLive(data.data.data)
+  //   }
+  // })
   return (
     <div className='max-w-[600px] mx-auto w-full bg-black min-h-screen relative'>
       <div className='absolute top-2 left-2 w-max z-10 flex items-center justify-between gap-2'>
