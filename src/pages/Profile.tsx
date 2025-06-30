@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { changePassword, getProfile, updateProfile } from '~/apis/auth.api'
 import toast from 'react-hot-toast'
 import { getWallet, getWalletTransaction, recharge, withdraw } from '~/apis/wallet.api'
+import { Video } from 'lucide-react'
 const Profile = () => {
   const { t } = useTranslation()
 
@@ -68,9 +69,19 @@ const Profile = () => {
           <p className=' text-xs text-gray-400'>{t('like')}</p>
         </div>
       </div>
-      <div className='mt-4 flex gap-x-2 max-w-[400px] mx-auto'>
+      <div className='mt-4 flex gap-x-2 max-w-[400px] mx-auto '>
         <EditProfile name={profile?.data.data.name} avatar={profile?.data.data.avatar} />
         <Recharge />
+      </div>
+      <div className='mt-4 flex gap-x-2 border-t dark:border-white/10 pt-5 mx-auto justify-center flex-col items-center'>
+        <Video className='text-gray-400 dark:text-white size-10 stroke-1' />
+        <p className='text-sm font-medium dark:text-white pt-3'>{t('start_live')}</p>
+        <button
+          type='submit'
+          className='bg-[#fe2c55] text-white px-4 py-2 rounded-full  mt-4 hover:bg-[#fe2c55]/80 transition-all duration-300 font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed'
+        >
+          {t('start')}
+        </button>
       </div>
     </div>
   )
@@ -119,7 +130,7 @@ const EditProfile = ({ name, avatar }: { name?: string; avatar?: string }) => {
       mutation.mutate({ avatar: data.secure_url })
       setAvatarValue(data.secure_url)
     } catch (error) {
-      console.log('Có lỗi khi upload ảnh')
+      toast.error(t('upload_failed'))
     }
   }
 
@@ -231,7 +242,7 @@ const EditProfile = ({ name, avatar }: { name?: string; avatar?: string }) => {
               type='submit'
               className='bg-[#fe2c55] text-white px-4 py-3 rounded w-full mt-6 font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed'
             >
-              Chỉnh sửa
+              {t('edit')}
             </button>
             {/* <div className='flex items-center justify-between gap-x-2 mb-2'>
               <p className='text-sm font-medium dark:text-white max-w-[100px] w-full'>{t('birthday')}</p>

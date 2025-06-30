@@ -66,7 +66,6 @@
   "edit_profile_success": "Cập nhật hồ sơ thành công",
   "edit_avatar_success": "Cập nhật ảnh đại diện thành công",
   "register_by_email": "Đăng ký bằng email",
-  "user_have_account": "Bạn đã có tài khoản?",
   "login_failed": "Đăng nhập thất bại",
   "note": "Ghi chú",
   "recharge_to_account": "Nạp tiền cho tài khoản",
@@ -75,5 +74,8 @@
   "amount": "Số tiền",
   "topup": "Nạp tiền",
   "withdraw_success": "Rút tiền thành công",
-  "withdraw_failed": "Rút tiền thất bại"
+  "withdraw_failed": "Rút tiền thất bại",
+  "start_live": "Bắt đầu live",
+  "edit": "Chỉnh sửa",
+  "upload_failed": "Tải lên thất bại"
 }

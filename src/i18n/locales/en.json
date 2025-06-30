@@ -57,7 +57,6 @@
   "new_password": "New password",
   "change_password_success": "Change password successfully",
   "user_not_have_account": "Don't have an account?",
-  "user_have_account": "Already have an account?",
   "login": "Login",
   "register": "Register",
   "login_by_email": "Login by email",
@@ -75,5 +74,8 @@
   "amount": "Amount",
   "topup": "Topup",
   "withdraw_success": "Withdraw successfully",
-  "withdraw_failed": "Withdraw failed"
+  "withdraw_failed": "Withdraw failed",
+  "start_live": "Start live",
+  "edit": "Edit",
+  "upload_failed": "Upload failed"
 }
