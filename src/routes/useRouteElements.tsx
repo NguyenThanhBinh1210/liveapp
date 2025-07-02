@@ -9,6 +9,7 @@ import LiveId from '~/pages/LiveId'
 import { useContext } from 'react'
 import { AppContext } from '~/contexts/app.context'
 import Login from '~/pages/Login'
+import Stream from '~/pages/Stream'
 
 const useRouteElements = () => {
   function ProtecedRoute() {
@@ -67,6 +68,13 @@ const useRouteElements = () => {
           path: '/live/:id',
           element: (
             <LiveId />
+          )
+        }
+        ,
+        {
+          path: '/stream',
+          element: (
+            <Stream />
           )
         }
         ,

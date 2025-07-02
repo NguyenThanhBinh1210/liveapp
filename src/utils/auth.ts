@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Profile } from '~/types/auth.type'
 
 export const setAccesTokenToLS = (access_token: string) => {
@@ -10,6 +11,7 @@ export const setRefreshTokenToLS = (refresh_token: string) => {
 export const clearLS = () => {
   localStorage.removeItem('access_token')
   localStorage.removeItem('profile')
+  localStorage.removeItem('live')
 }
 
 export const getAccessTokenFromLS = () => localStorage.getItem('access_token') || ''
@@ -29,4 +31,12 @@ export const setProfileFromLS = (profile: Profile) => {
 }
 export const setDarkModeFromLS = (dark: boolean) => {
   localStorage.setItem('darkmode', JSON.stringify(dark))
+}
+
+export const setLiveFromLS = (live: any) => {
+  localStorage.setItem('live', JSON.stringify(live))
+}
+export const getLiveFromLS = () => {
+  const result = localStorage.getItem('live')
+  return result ? JSON.parse(result) : null
 }

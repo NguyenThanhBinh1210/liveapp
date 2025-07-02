@@ -55,7 +55,7 @@ const Footer = () => {
           </Link>
         </div>
         <div className='col-span-1'>
-          <Link to={'/'} className='text-xs dark:text-white flex flex-col items-center justify-center py-2 '>
+          <Link to={'/stream'} className='text-xs dark:text-white flex flex-col items-center justify-center py-2 '>
             <svg
               xmlns='http://www.w3.org/2000/svg'
               fill='none'

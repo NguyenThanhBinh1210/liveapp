@@ -95,15 +95,10 @@ function createHttp(): AxiosInstance {
         refreshToken: getRefreshTokenFromLS()
       })
 
-      if (response.data?.accessToken && response.data?.refreshToken) {
+      if (response.data?.accessToken) {
         const newAccessToken = response.data.accessToken
-        const newRefreshToken = response.data.refreshToken
-
         accessToken = newAccessToken
-        refreshToken = newRefreshToken
         setAccesTokenToLS(newAccessToken)
-        setRefreshTokenToLS(newRefreshToken)
-
         return newAccessToken
       }
 

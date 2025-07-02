@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getLive } from '~/apis/live.api'
 import { useQuery } from 'react-query'
+
 const Home = () => {
   const { t } = useTranslation()
   const images = [bannerhome1, bannerhome2, bannerhome3]
@@ -76,9 +77,11 @@ const Home = () => {
     thumbnailUrl: string
     startedAt: string
     viewersCount: number
+    roomId: string
   }
 
   const [liveStreams, setLiveStreams] = useState<LiveStream[]>([])
+  console.log(liveStreams)
   useQuery({
     queryKey: ['livestreams'],
     queryFn: () => getLive({ page: 1, limit: 10 }),
@@ -125,9 +128,10 @@ const Home = () => {
           <img src={dexuat} alt='dexuat' className='w-7 h-7' />
           {t('recommended_for_you')}
         </p>
+
         {liveStreams.slice(0, 4).map((item, idx) => (
           <Link
-            to={`/live/${item._id}`}
+            to={`/live/${item.roomId}`}
             key={idx}
             className='rounded-2xl overflow-hidden shadow  hover:scale-[102%] cursor-pointer transition-all relative'
           >

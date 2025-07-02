@@ -77,5 +77,14 @@
   "withdraw_failed": "Rút tiền thất bại",
   "start_live": "Bắt đầu live",
   "edit": "Chỉnh sửa",
-  "upload_failed": "Tải lên thất bại"
+  "upload_failed": "Tải lên thất bại",
+  "stop": "Dừng",
+  "start_live_success": "Bắt đầu live thành công",
+  "start_live_failed": "Bắt đầu live thất bại",
+  "stop_live": "Dừng live",
+  "go_to": "Đi đến",
+  "stop_live_success": "Dừng live thành công",
+  "stop_live_failed": "Dừng live thất bại",
+  "start_Live": "Phát LIVE",
+  "please_fill_all_fields": "Vui lòng điền đầy đủ các trường"
 }

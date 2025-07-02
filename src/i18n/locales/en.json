@@ -77,5 +77,14 @@
   "withdraw_failed": "Withdraw failed",
   "start_live": "Start live",
   "edit": "Edit",
-  "upload_failed": "Upload failed"
+  "upload_failed": "Upload failed",
+  "stop": "Stop",
+  "start_live_success": "Start live successfully",
+  "start_live_failed": "Start live failed",
+  "stop_live": "Stop live",
+  "go_to": "Go to",
+  "stop_live_success": "Stop live successfully",
+  "stop_live_failed": "Stop live failed",
+  "start_Live": "Start Live",
+  "please_fill_all_fields": "Please fill all fields"
 }
