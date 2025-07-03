@@ -117,7 +117,7 @@ const Stream = () => {
   //   [webcamRef]
   // );
   return (
-    <div className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
+    <div className='max-w-[600px] mx-auto w-full bg-black/10  relative'>
       <Webcam
         audio={false}
         ref={webcamRef}
