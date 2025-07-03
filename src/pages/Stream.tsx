@@ -120,10 +120,8 @@ const Stream = () => {
     <div className='max-w-[600px] mx-auto w-full bg-black/10 min-h-screen relative'>
       <Webcam
         audio={false}
-        height={720}
         ref={webcamRef}
         screenshotFormat="image/jpeg"
-        width={1280}
         videoConstraints={videoConstraints}
       />
 
