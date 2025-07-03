@@ -1,8 +1,9 @@
 import { UserRound } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery } from 'react-query'
+import Webcam from 'react-webcam'
 import { getProfile } from '~/apis/auth.api'
 import { createLive, stopLive } from '~/apis/live.api'
 import { getLiveFromLS, setLiveFromLS } from '~/utils/auth'
@@ -101,8 +102,31 @@ const Stream = () => {
       toast.error(t('upload_failed'))
     }
   }
+
+  const videoConstraints = {
+    width: 1280,
+    height: 720,
+    facingMode: "user"
+  };
+
+  const webcamRef = useRef(null);
+  // const capture = useCallback(
+  //   () => {
+  //     const imageSrc = webcamRef.current?.getScreenshot();
+  //   },
+  //   [webcamRef]
+  // );
   return (
     <div className='max-w-[600px] mx-auto w-full bg-black/10 min-h-screen relative'>
+      <Webcam
+        audio={false}
+        height={720}
+        ref={webcamRef}
+        screenshotFormat="image/jpeg"
+        width={1280}
+        videoConstraints={videoConstraints}
+      />
+
       <div className='absolute top-0 left-0 w-full h-full  flex items-center justify-center'>
         {!live && (
           <form onSubmit={handleStartLive} className='w-full max-w-[300px] mx-auto'>
