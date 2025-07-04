@@ -17,13 +17,15 @@ const LiveId = () => {
   const { id } = useParams()
   // const { t } = useTranslation()
   const [live, setLive] = useState<any>(null)
-  console.log(live?.viewerUrl)
   useQuery({
     queryKey: ['live', id],
     queryFn: () => getLiveByRoomId(id || ''),
     enabled: !!id,
     onSuccess: (data) => {
       setLive(data.data.data)
+    },
+    onError: (error: any) => {
+      console.log(error.message)
     }
   })
   return (

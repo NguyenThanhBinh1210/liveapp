@@ -1,6 +1,6 @@
 import http from '~/utils/http'
 
-export const getLive = (params: { page?: number; limit?: number }) => {
+export const getLive = (params: { page?: number; limit?: number; status?: string }) => {
   return http.get('/stream', { params })
 }
 

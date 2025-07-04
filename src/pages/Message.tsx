@@ -4,6 +4,7 @@ import avatar from '~/assets/4sand.avif'
 import { CustomAudioPlayer } from '~/components/CustomAudioPlayer'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+
 const Message = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -253,6 +254,7 @@ const Notification = () => {
 }
 
 const ChatBox = () => {
+
   const [isOpen, setIsOpen] = useState(false)
   const { t } = useTranslation()
   useEffect(() => {
@@ -409,8 +411,8 @@ const ChatBox = () => {
               <div key={msg.id} className={`flex mt-auto ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[75%] rounded-xl ${msg.type === 'text' ? 'p-2' : ''} text-sm ${msg.sender === 'me'
-                      ? 'bg-[#1590c0] text-white rounded-br-none'
-                      : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
+                    ? 'bg-[#1590c0] text-white rounded-br-none'
+                    : 'bg-white dark:bg-[#333333] text-black dark:text-white rounded-bl-none'
                     }`}
                 >
                   {/* Text Message */}

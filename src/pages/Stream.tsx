@@ -1,8 +1,9 @@
-import { UserRound } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { SwitchCamera, UserRound, X } from 'lucide-react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery } from 'react-query'
+import { useNavigate } from 'react-router-dom'
 import Webcam from 'react-webcam'
 import { getProfile } from '~/apis/auth.api'
 import { createLive, stopLive } from '~/apis/live.api'
@@ -102,32 +103,24 @@ const Stream = () => {
       toast.error(t('upload_failed'))
     }
   }
+  const [switchCamera, setSwitchCamera] = useState(false);
+  const navigate = useNavigate()
 
-  const videoConstraints = {
-    width: 1280,
-    height: 720,
-    facingMode: "user"
-  };
-
-  const webcamRef = useRef(null);
-  // const capture = useCallback(
-  //   () => {
-  //     const imageSrc = webcamRef.current?.getScreenshot();
-  //   },
-  //   [webcamRef]
-  // );
   return (
-    <div className='max-w-[600px] mx-auto w-full bg-black/10  relative'>
+    <div className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
       <Webcam
         audio={false}
-        ref={webcamRef}
         screenshotFormat="image/jpeg"
-        videoConstraints={videoConstraints}
+        videoConstraints={{
+          facingMode: switchCamera ? "environment" : "user"
+        }}
       />
-
+      <button onClick={() => navigate('/')} className='absolute top-0 right-0 p-2 text-black z-10'>
+        <X />
+      </button>
       <div className='absolute top-0 left-0 w-full h-full  flex items-center justify-center'>
         {!live && (
-          <form onSubmit={handleStartLive} className='w-full max-w-[300px] mx-auto'>
+          <form onSubmit={handleStartLive} className='w-full max-w-[350px] mx-auto h-full flex flex-col justify-center pt-20 pb-10'>
             <div className='flex  gap-2 p-2 bg-[#48484866] '>
               <label htmlFor='thumbnail' className='w-[60px] h-[60px] bg-white relative'>
                 {thumbnail && <img src={thumbnail} alt='' className='w-full h-full object-cover ' />}
@@ -142,15 +135,20 @@ const Stream = () => {
               <textarea className=' px-1 py-0.5 text-white flex-1 placeholder:text-white/80  text-xs h-max' placeholder='Thêm tiêu đề' onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className='p-2 bg-[#48484866] mt-2'>
-              <textarea className=' px-1 py-0.5 text-white flex-1 placeholder:text-white/80  text-xs h-max' placeholder='Thêm mô tả' onChange={(e) => setDescription(e.target.value)} />
+              <textarea className='w-full px-1 py-0.5 text-white flex-1 placeholder:text-white/80  text-xs h-max' placeholder='Thêm mô tả' onChange={(e) => setDescription(e.target.value)} />
 
             </div>
-            <button
-              type='submit'
-              className='bg-[#fe2c55] text-white block mx-auto px-4 py-2 rounded-full w-[200px]  mt-4 hover:bg-[#fe2c55]/80 transition-all duration-300 font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed'
-            >
-              {t('start_Live')}
-            </button>
+            <div className='mt-auto w-full flex items-center justify-center '>
+              <button
+                type='submit'
+                className='bg-[#fe2c55] text-white block mx-auto px-4 py-2 rounded-full w-[200px]   hover:bg-[#fe2c55]/80 transition-all duration-300 font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed'
+              >
+                {t('start_Live')}
+              </button>
+              <button type='button' className='px-1' onClick={() => setSwitchCamera(!switchCamera)}>
+                <SwitchCamera className='w-6 h-6' />
+              </button>
+            </div>
           </form>
         )}
         {live && (

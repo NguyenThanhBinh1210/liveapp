@@ -1,16 +1,17 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useContext } from 'react'
 import { AppContext } from '~/contexts/app.context'
+import toast from 'react-hot-toast'
 const Footer = () => {
-  const { isAuthenticated } = useContext(AppContext)
+  const { isAuthenticated, profile } = useContext(AppContext)
   console.log(isAuthenticated)
   const path = useLocation().pathname
   const { t } = useTranslation()
+  const navigate = useNavigate()
   return (
     <footer className='  dark:bg-[#3d3d3d] transition-all duration-300  fixed bottom-0  max-w-[600px] w-full   right-0 left-1/2 -translate-x-1/2 z-50 pb-2'>
       <div className='grid grid-cols-4 max-w-[550px] mx-auto bg-white dark:bg-[#3d3d3d] border shadow-lg dark:border-[#3d3d3d] dark:shadow-none rounded-3xl'>
-
         <div className='col-span-1'>
           <Link
             to={'/'}
@@ -33,7 +34,12 @@ const Footer = () => {
                 stroke-linejoin='round'
                 stroke-width='1'
               >
-                <g id='导航图标' stroke='currentColor' stroke-width='1.5' transform='translate(-102.000000, -15.000000)'>
+                <g
+                  id='导航图标'
+                  stroke='currentColor'
+                  stroke-width='1.5'
+                  transform='translate(-102.000000, -15.000000)'
+                >
                   <g id='会议' transform='translate(102.000000, 15.000000)'>
                     <g id='编组' transform='translate(2.500000, 5.000000)'>
                       <path
@@ -54,8 +60,18 @@ const Footer = () => {
             Live
           </Link>
         </div>
-        <div className='col-span-1'>
-          <Link to={'/stream'} className='text-xs dark:text-white flex flex-col items-center justify-center py-2 '>
+        <div className='col-span-1 flex items-center justify-center'>
+          <button
+            type='button'
+            onClick={() => {
+              if (profile?.role === 'streamer') {
+                navigate('/stream')
+              } else {
+                toast.error(t('streamer_only'))
+              }
+            }}
+            className='text-xs  dark:text-white flex flex-col items-center justify-center py-2 '
+          >
             <svg
               xmlns='http://www.w3.org/2000/svg'
               fill='none'
@@ -71,10 +87,14 @@ const Footer = () => {
               />
             </svg>
             {t('start')}
-          </Link>
+          </button>
         </div>
         <div className='col-span-1'>
-          <Link to={'/message'} className={`text-xs  flex flex-col items-center justify-center py-2 ${path === '/message' ? 'text-[#FE47BE]' : 'dark:text-white'}`}>
+          <Link
+            to={'/message'}
+            className={`text-xs  flex flex-col items-center justify-center py-2 ${path === '/message' ? 'text-[#FE47BE]' : 'dark:text-white'
+              }`}
+          >
             <svg
               xmlns='http://www.w3.org/2000/svg'
               fill='none'
@@ -95,7 +115,8 @@ const Footer = () => {
         <div className='col-span-1'>
           <Link
             to={isAuthenticated ? '/profile' : '/login'}
-            className={`text-xs  flex flex-col items-center justify-center py-2 ${path === '/profile' || path === '/login' ? 'text-[#FE47BE]' : 'dark:text-white'}`}
+            className={`text-xs  flex flex-col items-center justify-center py-2 ${path === '/profile' || path === '/login' ? 'text-[#FE47BE]' : 'dark:text-white'
+              }`}
           >
             <svg
               xmlns='http://www.w3.org/2000/svg'

@@ -86,5 +86,11 @@
   "stop_live_success": "Stop live successfully",
   "stop_live_failed": "Stop live failed",
   "start_Live": "Start Live",
-  "please_fill_all_fields": "Please fill all fields"
+  "please_fill_all_fields": "Please fill all fields",
+  "streamer_only": "Streamer only",
+  "handle_withdraw_success": "Handle withdraw successfully",
+  "handle_withdraw_failed": "Handle withdraw failed",
+  "handle_recharge_success": "Handle recharge successfully",
+  "handle_recharge_failed": "Handle recharge failed",
+  "no_live": "No live"
 }

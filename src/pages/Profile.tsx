@@ -9,7 +9,8 @@ import { getWallet, getWalletTransaction, recharge, withdraw } from '~/apis/wall
 import { Video } from 'lucide-react'
 const Profile = () => {
   const { t } = useTranslation()
-
+  const { profile: profileContext } = useContext(AppContext)
+  const navigate = useNavigate()
   const { data: profile } = useQuery({
     queryKey: ['profile'],
     queryFn: () => getProfile(),
@@ -73,16 +74,21 @@ const Profile = () => {
         <EditProfile name={profile?.data.data.name} avatar={profile?.data.data.avatar} />
         <Recharge />
       </div>
-      <div className='mt-4 flex gap-x-2 border-t dark:border-white/10 pt-5 mx-auto justify-center flex-col items-center'>
-        <Video className='text-gray-400 dark:text-white size-10 stroke-1' />
-        <p className='text-sm font-medium dark:text-white pt-3'>{t('start_live')}</p>
-        <button
-          type='submit'
-          className='bg-[#fe2c55] text-white px-4 py-2 rounded-full  mt-4 hover:bg-[#fe2c55]/80 transition-all duration-300 font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed'
-        >
-          {t('start')}
-        </button>
-      </div>
+      {profileContext?.role === 'streamer' && (
+        <div className='mt-4 flex gap-x-2 border-t dark:border-white/10 pt-5 mx-auto justify-center flex-col items-center'>
+          <Video className='text-gray-400 dark:text-white size-10 stroke-1' />
+          <p className='text-sm font-medium dark:text-white pt-3'>{t('start_live')}</p>
+          <button
+            type='submit'
+            onClick={() => {
+              navigate('/stream')
+            }}
+            className='bg-[#fe2c55] text-white px-4 py-2 rounded-full  mt-4 hover:bg-[#fe2c55]/80 transition-all duration-300 font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed'
+          >
+            {t('start')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -398,7 +404,7 @@ const Withdraw = () => {
   const mutation = useMutation({
     mutationFn: (body: { amount: number; note: string }) => withdraw(body),
     onSuccess: () => {
-      toast.success(t('withdraw_success'))
+      toast.success(t('handle_withdraw_success'))
       setAmount(0)
       setNote('')
       queryClient.invalidateQueries({ queryKey: ['balance'] })
@@ -406,7 +412,7 @@ const Withdraw = () => {
       queryClient.invalidateQueries({ queryKey: ['wallet'] })
     },
     onError: () => {
-      toast.error(t('withdraw_failed'))
+      toast.error(t('handle_withdraw_failed'))
     }
   })
   const handleWithdraw = (e: React.FormEvent<HTMLFormElement>) => {
@@ -521,14 +527,14 @@ export const Recharge = ({ children, className }: { children?: React.ReactNode; 
   const mutation = useMutation({
     mutationFn: (body: { amount: number; note: string }) => recharge(body),
     onSuccess: () => {
-      toast.success(t('recharge_success'))
+      toast.success(t('handle_recharge_success'))
       setAmount(0)
       setNote('')
       queryClient.invalidateQueries({ queryKey: ['balance'] })
       queryClient.invalidateQueries({ queryKey: ['wallet'] })
     },
     onError: () => {
-      toast.error(t('recharge_failed'))
+      toast.error(t('handle_recharge_failed'))
     }
   })
   const handleRecharge = (e: React.FormEvent<HTMLFormElement>) => {
