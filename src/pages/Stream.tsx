@@ -111,7 +111,7 @@ const Stream = () => {
       <Webcam
         audio={false}
         screenshotFormat="image/jpeg"
-        className='h-screen w-full'
+        height={100}
         videoConstraints={{
           facingMode: switchCamera ? "environment" : "user"
         }}
