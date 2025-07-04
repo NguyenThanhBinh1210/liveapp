@@ -41,10 +41,10 @@ function createHttp(): AxiosInstance {
       const { url } = response.config
       if (url === '/auth/login' || url === '/auth/register') {
         const loginResponse = response.data.data as any
+        console.log(loginResponse)
         const dataProfile = loginResponse.user
         accessToken = loginResponse.accessToken
         refreshToken = loginResponse.refreshToken
-        console.log(dataProfile, accessToken, refreshToken)
         setProfileFromLS(dataProfile)
         setAccesTokenToLS(accessToken || '')
         setRefreshTokenToLS(refreshToken || '')

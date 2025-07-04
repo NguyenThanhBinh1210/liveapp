@@ -107,10 +107,11 @@ const Stream = () => {
   const navigate = useNavigate()
 
   return (
-    <div className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
+    <div className='max-w-[600px] mx-auto w-full bg-black/10 h-full relative'>
       <Webcam
         audio={false}
         screenshotFormat="image/jpeg"
+        className='h-full w-full '
         videoConstraints={{
           facingMode: switchCamera ? "environment" : "user"
         }}
