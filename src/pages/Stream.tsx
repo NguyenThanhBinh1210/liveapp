@@ -111,7 +111,7 @@ const Stream = () => {
         screenshotFormat='image/jpeg'
         style={{
           width: '100%',
-          height: '100%',
+          height: '120vh',
           position: 'absolute',
           top: 0,
           left: 0
