@@ -1,5 +1,5 @@
 import { SwitchCamera, UserRound, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery } from 'react-query'
@@ -105,15 +105,22 @@ const Stream = () => {
   }
   const [switchCamera, setSwitchCamera] = useState(false);
   const navigate = useNavigate()
+  const ref = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
 
+  useEffect(() => {
+    if (ref.current) {
+      setHeight(ref.current.offsetHeight)
+    }
+  }, [])
   return (
-    <div className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
+    <div ref={ref} className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
       <Webcam
         audio={false}
         screenshotFormat="image/jpeg"
         style={{
           width: '100%',
-          height: '100%',
+          height: height,
           position: 'absolute',
           top: 0,
           left: 0
@@ -125,7 +132,11 @@ const Stream = () => {
       <button onClick={() => navigate('/')} className='absolute top-0 right-0 p-2 text-black z-10'>
         <X />
       </button>
-      <div className='absolute top-0 left-0 w-full h-screen  flex items-center justify-center'>
+      <div
+        style={{
+          height: height
+        }}
+        className='absolute top-0 left-0 w-full   flex items-center justify-center'>
         {!live && (
           <form onSubmit={handleStartLive} className='w-full max-w-[350px] mx-auto h-full flex flex-col justify-center pt-20 pb-10'>
             <div className='flex  gap-2 p-2 bg-[#48484866] '>
