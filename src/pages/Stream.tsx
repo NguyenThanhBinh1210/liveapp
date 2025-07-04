@@ -111,12 +111,15 @@ const Stream = () => {
       <Webcam
         audio={false}
         screenshotFormat="image/jpeg"
-        className="w-full h-screen absolute top-0 left-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0
+        }}
         videoConstraints={{
           facingMode: switchCamera ? "environment" : "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-
         }}
       />
       <button onClick={() => navigate('/')} className='absolute top-0 right-0 p-2 text-black z-10'>
