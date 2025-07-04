@@ -122,7 +122,7 @@ const Stream = () => {
       <button onClick={() => navigate('/')} className='absolute top-0 right-0 p-2 text-black z-10'>
         <X />
       </button>
-      <div className='absolute top-0 left-0 w-full h-full  flex items-center justify-center'>
+      <div className='absolute top-0 left-0 w-full h-screen  flex items-center justify-center'>
         {!live && (
           <form onSubmit={handleStartLive} className='w-full max-w-[350px] mx-auto h-full flex flex-col justify-center pt-20 pb-10'>
             <div className='flex  gap-2 p-2 bg-[#48484866] '>
