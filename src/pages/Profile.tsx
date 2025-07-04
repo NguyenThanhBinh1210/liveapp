@@ -9,7 +9,6 @@ import { getWallet, getWalletTransaction, recharge, withdraw } from '~/apis/wall
 import { Video } from 'lucide-react'
 const Profile = () => {
   const { t } = useTranslation()
-  const { profile: profileContext } = useContext(AppContext)
   const navigate = useNavigate()
   const { data: profile } = useQuery({
     queryKey: ['profile'],
@@ -74,7 +73,7 @@ const Profile = () => {
         <EditProfile name={profile?.data.data.name} avatar={profile?.data.data.avatar} />
         <Recharge />
       </div>
-      {profileContext?.role === 'streamer' && (
+      {profile?.data.data.role === 'streamer' && (
         <div className='mt-4 flex gap-x-2 border-t dark:border-white/10 pt-5 mx-auto justify-center flex-col items-center'>
           <Video className='text-gray-400 dark:text-white size-10 stroke-1' />
           <p className='text-sm font-medium dark:text-white pt-3'>{t('start_live')}</p>

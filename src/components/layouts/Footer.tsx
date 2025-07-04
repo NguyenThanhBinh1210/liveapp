@@ -5,13 +5,13 @@ import { AppContext } from '~/contexts/app.context'
 import toast from 'react-hot-toast'
 const Footer = () => {
   const { isAuthenticated, profile } = useContext(AppContext)
-  console.log(isAuthenticated)
+  console.log(profile)
   const path = useLocation().pathname
   const { t } = useTranslation()
   const navigate = useNavigate()
   return (
     <footer className='  dark:bg-[#3d3d3d] transition-all duration-300  fixed bottom-0  max-w-[600px] w-full   right-0 left-1/2 -translate-x-1/2 z-50 pb-2'>
-      <div className='grid grid-cols-4 max-w-[550px] mx-auto bg-white dark:bg-[#3d3d3d] border shadow-lg dark:border-[#3d3d3d] dark:shadow-none rounded-3xl'>
+      <div className={`grid  max-w-[550px] mx-auto bg-white dark:bg-[#3d3d3d] border shadow-lg dark:border-[#3d3d3d] dark:shadow-none rounded-3xl ${profile?.role === 'streamer' ? 'grid-cols-4' : 'grid-cols-3'}`}>
         <div className='col-span-1'>
           <Link
             to={'/'}
@@ -60,35 +60,37 @@ const Footer = () => {
             Live
           </Link>
         </div>
-        <div className='col-span-1 flex items-center justify-center'>
-          <button
-            type='button'
-            onClick={() => {
-              if (profile?.role === 'streamer') {
-                navigate('/stream')
-              } else {
-                toast.error(t('streamer_only'))
-              }
-            }}
-            className='text-xs  dark:text-white flex flex-col items-center justify-center py-2 '
-          >
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth={1.5}
-              stroke='currentColor'
-              className='size-6'
+        {profile?.role === 'streamer' && (
+          <div className='col-span-1 flex items-center justify-center'>
+            <button
+              type='button'
+              onClick={() => {
+                if (profile?.role === 'streamer') {
+                  navigate('/stream')
+                } else {
+                  toast.error(t('streamer_only'))
+                }
+              }}
+              className='text-xs  dark:text-white flex flex-col items-center justify-center py-2 '
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z'
-              />
-            </svg>
-            {t('start')}
-          </button>
-        </div>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                fill='none'
+                viewBox='0 0 24 24'
+                strokeWidth={1.5}
+                stroke='currentColor'
+                className='size-6'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  d='m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z'
+                />
+              </svg>
+              {t('start')}
+            </button>
+          </div>
+        )}
         <div className='col-span-1'>
           <Link
             to={'/message'}

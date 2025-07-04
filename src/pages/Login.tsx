@@ -51,7 +51,7 @@ const LoginForm = () => {
   const mutation = useMutation({
     mutationFn: (body: LoginBodyType) => loginAccount(body),
     onSuccess: (data) => {
-      const newUser = data.data.user
+      const newUser = data.data.data.user
       setProfile(newUser)
       toast.success(t('login_success'))
       setTimeout(() => {
