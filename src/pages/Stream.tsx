@@ -105,14 +105,9 @@ const Stream = () => {
   }
   const [switchCamera, setSwitchCamera] = useState(false);
   const navigate = useNavigate()
-  const setRealVh = () => {
-    const vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-  };
-  setRealVh();
-  window.addEventListener('resize', setRealVh);
+
   return (
-    <div style={{ height: '100dvh' }} className='max-w-[600px] mx-auto w-full bg-black/10 min-h-real-screen relative'>
+    <div className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
       <Webcam
         audio={false}
         screenshotFormat="image/jpeg"
