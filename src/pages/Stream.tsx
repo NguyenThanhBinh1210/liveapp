@@ -1,5 +1,5 @@
 import { SwitchCamera, UserRound, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery } from 'react-query'
@@ -33,14 +33,12 @@ const Stream = () => {
   const [title, setTitle] = useState<string>('')
   const [description, setDescription] = useState<string>('')
 
-
   const handleStartLive = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!title || !description || !thumbnail) {
       toast.error(t('please_fill_all_fields'))
       return
-    }
-    else {
+    } else {
       console.log(thumbnail)
       console.log(title)
       console.log(description)
@@ -103,42 +101,34 @@ const Stream = () => {
       toast.error(t('upload_failed'))
     }
   }
-  const [switchCamera, setSwitchCamera] = useState(false);
+  const [switchCamera, setSwitchCamera] = useState(false)
   const navigate = useNavigate()
-  const ref = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(0)
 
-  useEffect(() => {
-    if (ref.current) {
-      setHeight(ref.current.offsetHeight)
-    }
-  }, [])
   return (
-    <div ref={ref} className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
+    <div className='max-w-[600px] mx-auto w-full bg-black/10 h-screen relative'>
       <Webcam
         audio={false}
-        screenshotFormat="image/jpeg"
+        screenshotFormat='image/jpeg'
         style={{
           width: '100%',
-          height: height,
+          height: '100%',
           position: 'absolute',
           top: 0,
           left: 0
         }}
         videoConstraints={{
-          facingMode: switchCamera ? "environment" : "user",
+          facingMode: switchCamera ? 'environment' : 'user'
         }}
       />
       <button onClick={() => navigate('/')} className='absolute top-0 right-0 p-2 text-black z-10'>
         <X />
       </button>
-      <div
-        style={{
-          height: height
-        }}
-        className='absolute top-0 left-0 w-full   flex items-center justify-center'>
+      <div className='absolute top-0 left-0 w-full h-screen  flex items-center justify-center'>
         {!live && (
-          <form onSubmit={handleStartLive} className='w-full max-w-[350px] mx-auto h-full flex flex-col justify-center pt-20 pb-10'>
+          <form
+            onSubmit={handleStartLive}
+            className='w-full max-w-[350px] mx-auto h-full flex flex-col justify-center pt-20 pb-10'
+          >
             <div className='flex  gap-2 p-2 bg-[#48484866] '>
               <label htmlFor='thumbnail' className='w-[60px] h-[60px] bg-white relative'>
                 {thumbnail && <img src={thumbnail} alt='' className='w-full h-full object-cover ' />}
@@ -150,11 +140,18 @@ const Stream = () => {
                 </div>
               </label>
               <input type='file' id='thumbnail' className='hidden' onChange={handleImageUpload} />
-              <textarea className=' px-1 py-0.5 text-white flex-1 placeholder:text-white/80  text-xs h-max' placeholder='Thêm tiêu đề' onChange={(e) => setTitle(e.target.value)} />
+              <textarea
+                className=' px-1 py-0.5 text-white flex-1 placeholder:text-white/80  text-xs h-max'
+                placeholder='Thêm tiêu đề'
+                onChange={(e) => setTitle(e.target.value)}
+              />
             </div>
             <div className='p-2 bg-[#48484866] mt-2'>
-              <textarea className='w-full px-1 py-0.5 text-white flex-1 placeholder:text-white/80  text-xs h-max' placeholder='Thêm mô tả' onChange={(e) => setDescription(e.target.value)} />
-
+              <textarea
+                className='w-full px-1 py-0.5 text-white flex-1 placeholder:text-white/80  text-xs h-max'
+                placeholder='Thêm mô tả'
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
             <div className='mt-auto w-full flex items-center justify-center '>
               <button
