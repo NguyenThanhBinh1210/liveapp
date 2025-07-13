@@ -5,10 +5,14 @@ import Home from '~/pages/Home'
 
 import Message from '~/pages/Message'
 import Profile from '~/pages/Profile'
+import Gifts from '~/pages/Gifts'
+import Wallet from '~/pages/Wallet'
+import Settings from '~/pages/Settings'
 import LiveId from '~/pages/LiveId'
 import { useContext } from 'react'
 import { AppContext } from '~/contexts/app.context'
 import Login from '~/pages/Login'
+import Register from '~/pages/Register'
 import Stream from '~/pages/Stream'
 
 const useRouteElements = () => {
@@ -30,6 +34,14 @@ const useRouteElements = () => {
           element: (
             <HomeLayout>
               <Login />
+            </HomeLayout>
+          )
+        },
+        {
+          path: 'register',
+          element: (
+            <HomeLayout>
+              <Register />
             </HomeLayout>
           )
         }
@@ -75,6 +87,30 @@ const useRouteElements = () => {
           path: '/stream',
           element: (
             <Stream />
+          )
+        },
+        {
+          path: '/gifts',
+          element: (
+            <HomeLayout>
+              <Gifts />
+            </HomeLayout>
+          )
+        },
+        {
+          path: '/wallet',
+          element: (
+            <HomeLayout>
+              <Wallet />
+            </HomeLayout>
+          )
+        },
+        {
+          path: '/settings',
+          element: (
+            <HomeLayout>
+              <Settings />
+            </HomeLayout>
           )
         }
         ,

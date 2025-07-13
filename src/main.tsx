@@ -5,6 +5,7 @@ import './styles/index.scss'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { AppProvider } from './contexts/app.context'
+import { SocketProvider } from './contexts/socket.context'
 import React from 'react'
 import './i18n'
 import { Toaster } from 'react-hot-toast'
@@ -21,8 +22,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AppProvider>
-          <App />
-          <Toaster />
+          <SocketProvider>
+            <App />
+            <Toaster />
+          </SocketProvider>
         </AppProvider>
       </QueryClientProvider>
     </BrowserRouter>

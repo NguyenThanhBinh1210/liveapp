@@ -1,0 +1,2626 @@
+# 🔌 HƯỚNG DẪN SOCKET & REDIS CHO CLIENT - LIVESTREAM PLATFORM
+
+## 📋 **MỤC LỤC**
+
+1. [🌟 Tổng quan](#tổng-quan)
+2. [⚙️ Cấu hình và Kết nối](#cấu-hình-và-kết-nối)
+3. [🔌 Socket.IO Implementation](#socketio-implementation)
+4. [📡 Redis Integration](#redis-integration)
+5. [💬 Chat System](#chat-system)
+6. [🎁 Gift System](#gift-system)
+7. [👥 Viewer Management](#viewer-management)
+8. [🔔 Notification System](#notification-system)
+9. [🛡️ Security & Authentication](#security--authentication)
+10. [⚠️ Error Handling](#error-handling)
+11. [📊 Best Practices](#best-practices)
+12. [🚀 Complete Examples](#complete-examples)
+
+---
+
+## 🌟 **TỔNG QUAN**
+
+### **Kiến trúc hệ thống**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Client App    │───▶│  Socket Gateway │───▶│   Redis Pub/Sub │
+│ (Browser/React) │    │   (Port 4001)   │    │   (Port 6379)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │   Backend API   │    │    MongoDB      │
+                       │   (Port 3000)   │    │   (Database)    │
+                       └─────────────────┘    └─────────────────┘
+```
+
+### **Chức năng chính**
+- **Real-time Chat**: Tin nhắn tức thì trong livestream
+- **Gift System**: Gửi quà tặng với animation
+- **Viewer Management**: Quản lý người xem
+- **Room Management**: Tham gia/rời khỏi room
+- **Admin Support**: Chat với admin
+- **Notifications**: Thông báo real-time
+
+---
+
+## ⚙️ **CẤU HÌNH VÀ KẾT NỐI**
+
+### **1. Environment URLs**
+
+```javascript
+// Development
+const SOCKET_URL = 'http://localhost:4001';
+const API_URL = 'http://localhost:3000';
+
+// Production
+const SOCKET_URL = 'https://apisocket.loltips.net';
+const SOCKET_LiveKit_URL = 'https://wslive.loltips.net';
+
+const API_URL = 'https://apilive.loltips.net';
+```
+
+### **2. Dependencies**
+
+#### **HTML + Vanilla JS**
+```html
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+```
+
+#### **React/Vue/Angular**
+```bash
+npm install socket.io-client
+```
+
+#### **Node.js (nếu cần Redis client)**
+```bash
+npm install redis
+```
+
+### **3. Basic Connection Setup**
+
+```javascript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:4001', {
+  path: '/socket',
+  transports: ['websocket'],
+  timeout: 20000,
+  forceNew: true,
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionAttempts: 5,
+  maxReconnectionAttempts: 5
+});
+```
+
+---
+
+## 🔌 **SOCKET.IO IMPLEMENTATION**
+
+### **1. Connection Management**
+
+```javascript
+class LivestreamSocket {
+  constructor(options = {}) {
+    this.socket = null;
+    this.isConnected = false;
+    this.currentRoom = null;
+    this.userId = options.userId;
+    this.username = options.username;
+    this.token = options.token;
+    
+    this.init();
+  }
+
+  init() {
+    this.socket = io('http://localhost:4001', {
+      path: '/socket',
+      transports: ['websocket'],
+      timeout: 20000,
+      forceNew: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    });
+
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    // Connection events
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to socket server');
+      this.isConnected = true;
+      this.onConnected();
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected:', reason);
+      this.isConnected = false;
+      this.onDisconnected(reason);
+    });
+
+    this.socket.on('connect_error', (error) => {
+      console.error('🔴 Connection error:', error);
+      this.onConnectionError(error);
+    });
+
+    this.socket.on('reconnect', (attemptNumber) => {
+      console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+      this.onReconnected();
+    });
+
+    this.socket.on('reconnect_error', (error) => {
+      console.error('🔴 Reconnection error:', error);
+    });
+
+    this.socket.on('reconnect_failed', () => {
+      console.error('🔴 Reconnection failed');
+      this.onReconnectionFailed();
+    });
+
+    // Server response events
+    this.socket.on('connected', (data) => {
+      console.log('📡 Server confirmed connection:', data);
+    });
+  }
+
+  // Connection callbacks (override these)
+  onConnected() {}
+  onDisconnected(reason) {}
+  onConnectionError(error) {}
+  onReconnected() {}
+  onReconnectionFailed() {}
+}
+```
+
+### **2. Room Management**
+
+```javascript
+class RoomManager extends LivestreamSocket {
+  constructor(options) {
+    super(options);
+    this.setupRoomEvents();
+  }
+
+  setupRoomEvents() {
+    // Room join events
+    this.socket.on('joinedRoom', (response) => {
+      console.log('🏠 Joined room:', response);
+      this.currentRoom = response.data.roomId;
+      this.onRoomJoined(response);
+    });
+
+    this.socket.on('joinRoomError', (error) => {
+      console.error('❌ Failed to join room:', error);
+      this.onRoomJoinError(error);
+    });
+
+    // User events
+    this.socket.on('userJoined', (data) => {
+      console.log('👤 User joined:', data);
+      this.onUserJoined(data);
+    });
+
+    this.socket.on('userLeft', (data) => {
+      console.log('👋 User left:', data);
+      this.onUserLeft(data);
+    });
+
+    // Room updates
+    this.socket.on('roomUpdate', (data) => {
+      console.log('🔄 Room updated:', data);
+      this.onRoomUpdate(data);
+    });
+
+    this.socket.on('roomInfo', (data) => {
+      console.log('ℹ️ Room info:', data);
+      this.onRoomInfo(data);
+    });
+  }
+
+  // Join room
+  joinRoom(roomId, userData = {}) {
+    if (!this.isConnected) {
+      console.error('❌ Socket not connected');
+      return false;
+    }
+
+    const joinData = {
+      roomId: roomId,
+      userId: this.userId,
+      username: this.username,
+      ...userData
+    };
+
+    console.log('🚪 Joining room:', joinData);
+    this.socket.emit('joinRoom', joinData);
+    return true;
+  }
+
+  // Leave room
+  leaveRoom(roomId = this.currentRoom) {
+    if (!roomId) {
+      console.error('❌ No room to leave');
+      return false;
+    }
+
+    console.log('🚪 Leaving room:', roomId);
+    this.socket.emit('leaveRoom', { roomId });
+    this.currentRoom = null;
+    return true;
+  }
+
+  // Get room info
+  getRoomInfo(roomId = this.currentRoom) {
+    if (!roomId) {
+      console.error('❌ No room specified');
+      return false;
+    }
+
+    this.socket.emit('getRoomInfo', { roomId });
+    return true;
+  }
+
+  // Room callbacks (override these)
+  onRoomJoined(response) {}
+  onRoomJoinError(error) {}
+  onUserJoined(data) {}
+  onUserLeft(data) {}
+  onRoomUpdate(data) {}
+  onRoomInfo(data) {}
+}
+```
+
+### **3. Ping/Pong System**
+
+```javascript
+class ViewerPingManager extends RoomManager {
+  constructor(options) {
+    super(options);
+    this.pingInterval = null;
+    this.pingTimeout = 30000; // 30 seconds
+    this.setupPingEvents();
+  }
+
+  setupPingEvents() {
+    this.socket.on('viewerPong', (response) => {
+      console.log('🏓 Pong received:', response);
+      this.onPongReceived(response);
+    });
+
+    this.socket.on('viewerPingError', (error) => {
+      console.error('❌ Ping error:', error);
+      this.onPingError(error);
+    });
+  }
+
+  startPing(roomId = this.currentRoom) {
+    if (!roomId) {
+      console.error('❌ No room for ping');
+      return;
+    }
+
+    this.stopPing(); // Stop existing ping
+
+    console.log('🏓 Starting ping for room:', roomId);
+    this.pingInterval = setInterval(() => {
+      this.sendPing(roomId);
+    }, this.pingTimeout);
+  }
+
+  stopPing() {
+    if (this.pingInterval) {
+      console.log('🛑 Stopping ping');
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  sendPing(roomId = this.currentRoom) {
+    if (!this.isConnected || !roomId) {
+      return;
+    }
+
+    const pingData = {
+      roomId: roomId,
+      userId: this.userId,
+      username: this.username,
+      timestamp: new Date().toISOString()
+    };
+
+    this.socket.emit('viewerPing', pingData);
+  }
+
+  onPongReceived(response) {}
+  onPingError(error) {}
+}
+```
+
+---
+
+## 💬 **CHAT SYSTEM**
+
+### **1. Chat Implementation**
+
+```javascript
+class ChatManager extends ViewerPingManager {
+  constructor(options) {
+    super(options);
+    this.messageHistory = [];
+    this.setupChatEvents();
+  }
+
+  setupChatEvents() {
+    // Message events
+    this.socket.on('newMessage', (data) => {
+      console.log('💬 New message:', data);
+      this.messageHistory.push(data);
+      this.onNewMessage(data);
+    });
+
+    this.socket.on('messageSent', (response) => {
+      console.log('✅ Message sent:', response);
+      this.onMessageSent(response);
+    });
+
+    this.socket.on('sendMessageError', (error) => {
+      console.error('❌ Send message error:', error);
+      this.onMessageError(error);
+    });
+
+    // Backend events (từ Redis)
+    this.socket.on('chatMessageFromBackend', (data) => {
+      console.log('📨 Message from backend:', data);
+      this.onBackendMessage(data);
+    });
+  }
+
+  // Send text message
+  sendMessage(message, roomId = this.currentRoom) {
+    if (!this.isConnected || !roomId) {
+      console.error('❌ Cannot send message - not connected or no room');
+      return false;
+    }
+
+    if (!message || message.trim().length === 0) {
+      console.error('❌ Message cannot be empty');
+      return false;
+    }
+
+    if (message.length > 500) {
+      console.error('❌ Message too long (max 500 characters)');
+      return false;
+    }
+
+    const messageData = {
+      roomId: roomId,
+      userId: this.userId,
+      username: this.username,
+      message: message.trim(),
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('📤 Sending message:', messageData);
+    this.socket.emit('sendMessage', messageData);
+    return true;
+  }
+
+  // Send image message
+  sendImageMessage(imageUrl, roomId = this.currentRoom) {
+    if (!this.isConnected || !roomId) {
+      console.error('❌ Cannot send image - not connected or no room');
+      return false;
+    }
+
+    if (!imageUrl || !this.isValidImageUrl(imageUrl)) {
+      console.error('❌ Invalid image URL');
+      return false;
+    }
+
+    const imageData = {
+      roomId: roomId,
+      userId: this.userId,
+      username: this.username,
+      imageUrl: imageUrl,
+      messageType: 'image',
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('📤 Sending image:', imageData);
+    this.socket.emit('sendImageMessage', imageData);
+    return true;
+  }
+
+  // Chat with admin
+  chatWithAdmin(message, supportType = 'general') {
+    if (!this.isConnected) {
+      console.error('❌ Cannot chat with admin - not connected');
+      return false;
+    }
+
+    const adminChatData = {
+      userId: this.userId,
+      username: this.username,
+      message: message.trim(),
+      supportType: supportType,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('🛠️ Chat with admin:', adminChatData);
+    this.socket.emit('chatWithAdmin', adminChatData);
+    return true;
+  }
+
+  // Utility functions
+  isValidImageUrl(url) {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const supportedDomains = ['imgur.com', 'cloudinary.com', 'res.cloudinary.com'];
+    
+    try {
+      const urlObj = new URL(url);
+      const hasValidExtension = imageExtensions.some(ext => 
+        urlObj.pathname.toLowerCase().endsWith(ext)
+      );
+      const hasValidDomain = supportedDomains.some(domain => 
+        urlObj.hostname.includes(domain)
+      );
+      
+      return hasValidExtension && hasValidDomain;
+    } catch {
+      return false;
+    }
+  }
+
+  // Get message history
+  getMessageHistory(limit = 50) {
+    return this.messageHistory.slice(-limit);
+  }
+
+  // Clear message history
+  clearMessageHistory() {
+    this.messageHistory = [];
+  }
+
+  // Chat callbacks (override these)
+  onNewMessage(data) {}
+  onMessageSent(response) {}
+  onMessageError(error) {}
+  onBackendMessage(data) {}
+}
+```
+
+### **2. Message Rate Limiting**
+
+```javascript
+class RateLimitedChatManager extends ChatManager {
+  constructor(options) {
+    super(options);
+    this.lastMessageTime = 0;
+    this.messageCooldown = 1000; // 1 second
+    this.messageCount = 0;
+    this.maxMessagesPerMinute = 30;
+    this.messageTimestamps = [];
+  }
+
+  sendMessage(message, roomId = this.currentRoom) {
+    // Check cooldown
+    const now = Date.now();
+    if (now - this.lastMessageTime < this.messageCooldown) {
+      console.warn('⏰ Message cooldown active');
+      this.onRateLimitHit('cooldown');
+      return false;
+    }
+
+    // Check rate limit
+    if (!this.checkRateLimit()) {
+      console.warn('🚫 Rate limit exceeded');
+      this.onRateLimitHit('rate_limit');
+      return false;
+    }
+
+    // Send message
+    const result = super.sendMessage(message, roomId);
+    
+    if (result) {
+      this.lastMessageTime = now;
+      this.messageTimestamps.push(now);
+      this.messageCount++;
+    }
+
+    return result;
+  }
+
+  checkRateLimit() {
+    const now = Date.now();
+    const oneMinuteAgo = now - 60000;
+    
+    // Remove old timestamps
+    this.messageTimestamps = this.messageTimestamps.filter(
+      timestamp => timestamp > oneMinuteAgo
+    );
+    
+    return this.messageTimestamps.length < this.maxMessagesPerMinute;
+  }
+
+  onRateLimitHit(type) {
+    // Override this to handle rate limit
+  }
+}
+```
+
+---
+
+## 🎁 **GIFT SYSTEM**
+
+### **1. Gift Implementation**
+
+```javascript
+class GiftManager extends RateLimitedChatManager {
+  constructor(options) {
+    super(options);
+    this.setupGiftEvents();
+  }
+
+  setupGiftEvents() {
+    // Gift events
+    this.socket.on('newGift', (data) => {
+      console.log('🎁 New gift:', data);
+      this.onNewGift(data);
+    });
+
+    this.socket.on('giftSent', (response) => {
+      console.log('✅ Gift sent:', response);
+      this.onGiftSent(response);
+    });
+
+    this.socket.on('sendGiftError', (error) => {
+      console.error('❌ Send gift error:', error);
+      this.onGiftError(error);
+    });
+
+    // Backend gift events (từ Redis)
+    this.socket.on('giftFromBackend', (data) => {
+      console.log('🎁 Gift from backend:', data);
+      this.onBackendGift(data);
+    });
+  }
+
+  // Send gift
+  sendGift(giftData, roomId = this.currentRoom) {
+    if (!this.isConnected || !roomId) {
+      console.error('❌ Cannot send gift - not connected or no room');
+      return false;
+    }
+
+    if (!this.validateGiftData(giftData)) {
+      console.error('❌ Invalid gift data');
+      return false;
+    }
+
+    const giftMessage = {
+      roomId: roomId,
+      senderId: this.userId,
+      senderName: this.username,
+      receiverId: giftData.receiverId,
+      receiverName: giftData.receiverName,
+      giftId: giftData.giftId,
+      giftName: giftData.giftName,
+      giftType: giftData.giftType,
+      giftValue: giftData.giftValue,
+      quantity: giftData.quantity || 1,
+      message: giftData.message || '',
+      animation: giftData.animation || 'default',
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('🎁 Sending gift:', giftMessage);
+    this.socket.emit('sendGift', giftMessage);
+    return true;
+  }
+
+  // Validate gift data
+  validateGiftData(giftData) {
+    const required = ['receiverId', 'giftId', 'giftName', 'giftType', 'giftValue'];
+    
+    for (const field of required) {
+      if (!giftData[field]) {
+        console.error(`❌ Missing required field: ${field}`);
+        return false;
+      }
+    }
+
+    if (giftData.quantity && (giftData.quantity < 1 || giftData.quantity > 100)) {
+      console.error('❌ Invalid quantity (1-100)');
+      return false;
+    }
+
+    if (giftData.message && giftData.message.length > 200) {
+      console.error('❌ Gift message too long (max 200 characters)');
+      return false;
+    }
+
+    return true;
+  }
+
+  // Gift callbacks (override these)
+  onNewGift(data) {}
+  onGiftSent(response) {}
+  onGiftError(error) {}
+  onBackendGift(data) {}
+}
+```
+
+### **2. Gift Animation System**
+
+```javascript
+class GiftAnimationManager extends GiftManager {
+  constructor(options) {
+    super(options);
+    this.animationQueue = [];
+    this.isAnimating = false;
+  }
+
+  onNewGift(data) {
+    super.onNewGift(data);
+    this.queueGiftAnimation(data);
+  }
+
+  onBackendGift(data) {
+    super.onBackendGift(data);
+    this.queueGiftAnimation(data.data);
+  }
+
+  queueGiftAnimation(giftData) {
+    this.animationQueue.push(giftData);
+    
+    if (!this.isAnimating) {
+      this.processAnimationQueue();
+    }
+  }
+
+  async processAnimationQueue() {
+    if (this.animationQueue.length === 0) {
+      this.isAnimating = false;
+      return;
+    }
+
+    this.isAnimating = true;
+    const giftData = this.animationQueue.shift();
+    
+    try {
+      await this.playGiftAnimation(giftData);
+    } catch (error) {
+      console.error('❌ Animation error:', error);
+    }
+
+    // Process next animation after delay
+    setTimeout(() => {
+      this.processAnimationQueue();
+    }, 1000);
+  }
+
+  async playGiftAnimation(giftData) {
+    return new Promise((resolve) => {
+      const animationType = giftData.animation || 'default';
+      const duration = this.getAnimationDuration(animationType);
+      
+      console.log(`🎬 Playing ${animationType} animation for ${duration}ms`);
+      
+      // Trigger animation in UI
+      this.triggerUIAnimation(giftData, animationType);
+      
+      // Resolve after animation duration
+      setTimeout(resolve, duration);
+    });
+  }
+
+  getAnimationDuration(animationType) {
+    const durations = {
+      'default': 2000,
+      'fireworks': 3000,
+      'hearts': 2500,
+      'stars': 2000,
+      'rainbow': 4000
+    };
+    
+    return durations[animationType] || 2000;
+  }
+
+  triggerUIAnimation(giftData, animationType) {
+    // Override this to implement actual UI animation
+    console.log('🎨 Triggering UI animation:', {
+      gift: giftData.giftName,
+      sender: giftData.senderName,
+      receiver: giftData.receiverName,
+      animation: animationType
+    });
+  }
+}
+```
+
+---
+
+## 📡 **REDIS INTEGRATION**
+
+### **1. Redis Client Setup (Node.js)**
+
+```javascript
+import { createClient } from 'redis';
+
+class RedisManager {
+  constructor(options = {}) {
+    this.client = null;
+    this.subscriber = null;
+    this.publisher = null;
+    this.isConnected = false;
+    this.options = {
+      host: options.host || 'localhost',
+      port: options.port || 6379,
+      password: options.password || null,
+      db: options.db || 0,
+      ...options
+    };
+  }
+
+  async connect() {
+    try {
+      // Create Redis clients
+      const config = this.buildConfig();
+      
+      this.client = createClient(config);
+      this.subscriber = createClient(config);
+      this.publisher = createClient(config);
+
+      // Connect all clients
+      await Promise.all([
+        this.client.connect(),
+        this.subscriber.connect(),
+        this.publisher.connect()
+      ]);
+
+      this.isConnected = true;
+      console.log('✅ Redis connected successfully');
+      
+      this.setupErrorHandlers();
+      return true;
+    } catch (error) {
+      console.error('❌ Redis connection failed:', error);
+      this.isConnected = false;
+      return false;
+    }
+  }
+
+  buildConfig() {
+    if (this.options.url) {
+      return { url: this.options.url };
+    }
+
+    return {
+      socket: {
+        host: this.options.host,
+        port: this.options.port,
+      },
+      password: this.options.password,
+      database: this.options.db,
+    };
+  }
+
+  setupErrorHandlers() {
+    [this.client, this.subscriber, this.publisher].forEach(client => {
+      client.on('error', (error) => {
+        console.error('🔴 Redis error:', error);
+        this.onRedisError(error);
+      });
+
+      client.on('connect', () => {
+        console.log('🔗 Redis client connected');
+      });
+
+      client.on('disconnect', () => {
+        console.log('❌ Redis client disconnected');
+        this.isConnected = false;
+      });
+    });
+  }
+
+  // Publish message
+  async publish(channel, data) {
+    if (!this.isConnected) {
+      console.error('❌ Redis not connected');
+      return false;
+    }
+
+    try {
+      const message = JSON.stringify(data);
+      await this.publisher.publish(channel, message);
+      console.log(`📤 Published to ${channel}:`, data);
+      return true;
+    } catch (error) {
+      console.error('❌ Publish error:', error);
+      return false;
+    }
+  }
+
+  // Subscribe to channel
+  async subscribe(channel, callback) {
+    if (!this.isConnected) {
+      console.error('❌ Redis not connected');
+      return false;
+    }
+
+    try {
+      await this.subscriber.subscribe(channel, (message) => {
+        try {
+          const data = JSON.parse(message);
+          console.log(`📥 Received from ${channel}:`, data);
+          callback(data);
+        } catch (parseError) {
+          console.error('❌ Parse error:', parseError);
+        }
+      });
+
+      console.log(`👂 Subscribed to channel: ${channel}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Subscribe error:', error);
+      return false;
+    }
+  }
+
+  // Unsubscribe from channel
+  async unsubscribe(channel) {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    try {
+      await this.subscriber.unsubscribe(channel);
+      console.log(`🔇 Unsubscribed from channel: ${channel}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Unsubscribe error:', error);
+      return false;
+    }
+  }
+
+  // Cache operations
+  async set(key, value, ttl = null) {
+    if (!this.isConnected) return false;
+
+    try {
+      const data = JSON.stringify(value);
+      
+      if (ttl) {
+        await this.client.setEx(key, ttl, data);
+      } else {
+        await this.client.set(key, data);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Set error:', error);
+      return false;
+    }
+  }
+
+  async get(key) {
+    if (!this.isConnected) return null;
+
+    try {
+      const data = await this.client.get(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error('❌ Get error:', error);
+      return null;
+    }
+  }
+
+  async del(key) {
+    if (!this.isConnected) return false;
+
+    try {
+      await this.client.del(key);
+      return true;
+    } catch (error) {
+      console.error('❌ Delete error:', error);
+      return false;
+    }
+  }
+
+  // Disconnect
+  async disconnect() {
+    try {
+      await Promise.all([
+        this.client?.disconnect(),
+        this.subscriber?.disconnect(),
+        this.publisher?.disconnect()
+      ]);
+      
+      this.isConnected = false;
+      console.log('👋 Redis disconnected');
+    } catch (error) {
+      console.error('❌ Disconnect error:', error);
+    }
+  }
+
+  onRedisError(error) {
+    // Override this to handle Redis errors
+  }
+}
+```
+
+### **2. Redis Channels**
+
+```javascript
+const REDIS_CHANNELS = {
+  CHAT_MESSAGE: 'chat.message',
+  GIFT_SEND: 'gift.send',
+  VIEWER_JOIN: 'viewer.join',
+  VIEWER_LEAVE: 'viewer.leave',
+  ADMIN_CHAT: 'admin.chat',
+  ROOM_UPDATE: 'room.update',
+  NOTIFICATION: 'notification',
+  STREAM_START: 'stream.start',
+  STREAM_END: 'stream.end'
+};
+
+class ChannelManager extends RedisManager {
+  constructor(options) {
+    super(options);
+    this.subscriptions = new Map();
+  }
+
+  // Subscribe to chat messages
+  async subscribeToChatMessages(callback) {
+    return this.subscribe(REDIS_CHANNELS.CHAT_MESSAGE, callback);
+  }
+
+  // Subscribe to gifts
+  async subscribeToGifts(callback) {
+    return this.subscribe(REDIS_CHANNELS.GIFT_SEND, callback);
+  }
+
+  // Subscribe to viewer events
+  async subscribeToViewerEvents(callback) {
+    await this.subscribe(REDIS_CHANNELS.VIEWER_JOIN, callback);
+    await this.subscribe(REDIS_CHANNELS.VIEWER_LEAVE, callback);
+  }
+
+  // Subscribe to room updates
+  async subscribeToRoomUpdates(callback) {
+    return this.subscribe(REDIS_CHANNELS.ROOM_UPDATE, callback);
+  }
+
+  // Subscribe to notifications
+  async subscribeToNotifications(callback) {
+    return this.subscribe(REDIS_CHANNELS.NOTIFICATION, callback);
+  }
+
+  // Publish chat message
+  async publishChatMessage(data) {
+    return this.publish(REDIS_CHANNELS.CHAT_MESSAGE, {
+      type: 'chat_message',
+      roomId: data.roomId,
+      userId: data.userId,
+      username: data.username,
+      message: data.message,
+      timestamp: new Date().toISOString(),
+      ...data
+    });
+  }
+
+  // Publish gift
+  async publishGift(data) {
+    return this.publish(REDIS_CHANNELS.GIFT_SEND, {
+      type: 'gift_send',
+      roomId: data.roomId,
+      senderId: data.senderId,
+      senderName: data.senderName,
+      receiverId: data.receiverId,
+      receiverName: data.receiverName,
+      giftId: data.giftId,
+      giftName: data.giftName,
+      giftValue: data.giftValue,
+      timestamp: new Date().toISOString(),
+      ...data
+    });
+  }
+
+  // Publish viewer join
+  async publishViewerJoin(data) {
+    return this.publish(REDIS_CHANNELS.VIEWER_JOIN, {
+      type: 'viewer_join',
+      roomId: data.roomId,
+      userId: data.userId,
+      username: data.username,
+      timestamp: new Date().toISOString(),
+      ...data
+    });
+  }
+
+  // Publish viewer leave
+  async publishViewerLeave(data) {
+    return this.publish(REDIS_CHANNELS.VIEWER_LEAVE, {
+      type: 'viewer_leave',
+      roomId: data.roomId,
+      userId: data.userId,
+      username: data.username,
+      timestamp: new Date().toISOString(),
+      ...data
+    });
+  }
+}
+```
+
+---
+
+## 🔔 **NOTIFICATION SYSTEM**
+
+### **1. Notification Manager**
+
+```javascript
+class NotificationManager extends GiftAnimationManager {
+  constructor(options) {
+    super(options);
+    this.notifications = [];
+    this.unreadCount = 0;
+    this.setupNotificationEvents();
+  }
+
+  setupNotificationEvents() {
+    // Notification events
+    this.socket.on('notification', (data) => {
+      console.log('🔔 New notification:', data);
+      this.addNotification(data);
+    });
+
+    this.socket.on('notificationUpdate', (data) => {
+      console.log('🔄 Notification updated:', data);
+      this.updateNotification(data);
+    });
+
+    // System notifications
+    this.socket.on('systemNotification', (data) => {
+      console.log('📢 System notification:', data);
+      this.addSystemNotification(data);
+    });
+  }
+
+  addNotification(notification) {
+    const notificationData = {
+      id: notification.id || Date.now().toString(),
+      type: notification.type || 'info',
+      title: notification.title || 'Notification',
+      message: notification.message || '',
+      data: notification.data || {},
+      isRead: false,
+      timestamp: new Date().toISOString(),
+      ...notification
+    };
+
+    this.notifications.unshift(notificationData);
+    this.unreadCount++;
+    
+    // Keep only last 100 notifications
+    if (this.notifications.length > 100) {
+      this.notifications = this.notifications.slice(0, 100);
+    }
+
+    this.onNewNotification(notificationData);
+  }
+
+  addSystemNotification(notification) {
+    const systemNotification = {
+      ...notification,
+      type: 'system',
+      isSystem: true
+    };
+    
+    this.addNotification(systemNotification);
+  }
+
+  updateNotification(updateData) {
+    const index = this.notifications.findIndex(n => n.id === updateData.id);
+    
+    if (index !== -1) {
+      this.notifications[index] = {
+        ...this.notifications[index],
+        ...updateData
+      };
+      
+      this.onNotificationUpdated(this.notifications[index]);
+    }
+  }
+
+  markAsRead(notificationId) {
+    const notification = this.notifications.find(n => n.id === notificationId);
+    
+    if (notification && !notification.isRead) {
+      notification.isRead = true;
+      this.unreadCount = Math.max(0, this.unreadCount - 1);
+      this.onNotificationRead(notification);
+    }
+  }
+
+  markAllAsRead() {
+    this.notifications.forEach(notification => {
+      notification.isRead = true;
+    });
+    
+    this.unreadCount = 0;
+    this.onAllNotificationsRead();
+  }
+
+  getUnreadNotifications() {
+    return this.notifications.filter(n => !n.isRead);
+  }
+
+  getNotificationsByType(type) {
+    return this.notifications.filter(n => n.type === type);
+  }
+
+  clearNotifications() {
+    this.notifications = [];
+    this.unreadCount = 0;
+    this.onNotificationsCleared();
+  }
+
+  // Notification callbacks (override these)
+  onNewNotification(notification) {}
+  onNotificationUpdated(notification) {}
+  onNotificationRead(notification) {}
+  onAllNotificationsRead() {}
+  onNotificationsCleared() {}
+}
+```
+
+---
+
+## 🛡️ **SECURITY & AUTHENTICATION**
+
+### **1. Authentication Manager**
+
+```javascript
+class AuthenticatedSocketManager extends NotificationManager {
+  constructor(options) {
+    super(options);
+    this.accessToken = options.accessToken;
+    this.refreshToken = options.refreshToken;
+    this.tokenExpiry = options.tokenExpiry;
+    this.setupAuthEvents();
+  }
+
+  setupAuthEvents() {
+    // Authentication events
+    this.socket.on('authRequired', (data) => {
+      console.log('🔐 Authentication required:', data);
+      this.handleAuthRequired(data);
+    });
+
+    this.socket.on('authSuccess', (data) => {
+      console.log('✅ Authentication successful:', data);
+      this.onAuthSuccess(data);
+    });
+
+    this.socket.on('authFailed', (data) => {
+      console.error('❌ Authentication failed:', data);
+      this.onAuthFailed(data);
+    });
+
+    this.socket.on('tokenExpired', (data) => {
+      console.warn('⏰ Token expired:', data);
+      this.handleTokenExpired(data);
+    });
+  }
+
+  // Authenticate with server
+  authenticate() {
+    if (!this.accessToken) {
+      console.error('❌ No access token available');
+      return false;
+    }
+
+    const authData = {
+      token: this.accessToken,
+      userId: this.userId,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('🔐 Authenticating with server');
+    this.socket.emit('authenticate', authData);
+    return true;
+  }
+
+  // Handle authentication required
+  async handleAuthRequired(data) {
+    if (this.isTokenExpired()) {
+      const refreshed = await this.refreshAccessToken();
+      
+      if (!refreshed) {
+        this.onAuthenticationFailed('token_refresh_failed');
+        return;
+      }
+    }
+
+    this.authenticate();
+  }
+
+  // Handle token expired
+  async handleTokenExpired(data) {
+    console.log('🔄 Refreshing expired token');
+    const refreshed = await this.refreshAccessToken();
+    
+    if (refreshed) {
+      this.authenticate();
+    } else {
+      this.onAuthenticationFailed('token_refresh_failed');
+    }
+  }
+
+  // Check if token is expired
+  isTokenExpired() {
+    if (!this.tokenExpiry) return false;
+    
+    const now = new Date().getTime();
+    const expiry = new Date(this.tokenExpiry).getTime();
+    const buffer = 5 * 60 * 1000; // 5 minutes buffer
+    
+    return now >= (expiry - buffer);
+  }
+
+  // Refresh access token
+  async refreshAccessToken() {
+    if (!this.refreshToken) {
+      console.error('❌ No refresh token available');
+      return false;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/v1/auth/refresh-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          refreshToken: this.refreshToken
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Token refresh failed');
+      }
+
+      const data = await response.json();
+      
+      this.accessToken = data.accessToken;
+      this.refreshToken = data.refreshToken;
+      this.tokenExpiry = data.expiresAt;
+      
+      console.log('✅ Token refreshed successfully');
+      this.onTokenRefreshed(data);
+      return true;
+    } catch (error) {
+      console.error('❌ Token refresh error:', error);
+      this.onTokenRefreshFailed(error);
+      return false;
+    }
+  }
+
+  // Set new tokens
+  setTokens(accessToken, refreshToken, expiresAt) {
+    this.accessToken = accessToken;
+    this.refreshToken = refreshToken;
+    this.tokenExpiry = expiresAt;
+  }
+
+  // Clear tokens
+  clearTokens() {
+    this.accessToken = null;
+    this.refreshToken = null;
+    this.tokenExpiry = null;
+  }
+
+  // Auth callbacks (override these)
+  onAuthSuccess(data) {}
+  onAuthFailed(data) {}
+  onTokenRefreshed(data) {}
+  onTokenRefreshFailed(error) {}
+  onAuthenticationFailed(reason) {}
+}
+```
+
+### **2. Security Utilities**
+
+```javascript
+class SecurityUtils {
+  // Validate message content
+  static validateMessage(message) {
+    if (!message || typeof message !== 'string') {
+      return { valid: false, reason: 'Invalid message format' };
+    }
+
+    if (message.length === 0) {
+      return { valid: false, reason: 'Message cannot be empty' };
+    }
+
+    if (message.length > 500) {
+      return { valid: false, reason: 'Message too long (max 500 characters)' };
+    }
+
+    // Check for malicious content
+    const maliciousPatterns = [
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+      /eval\s*\(/gi
+    ];
+
+    for (const pattern of maliciousPatterns) {
+      if (pattern.test(message)) {
+        return { valid: false, reason: 'Message contains forbidden content' };
+      }
+    }
+
+    return { valid: true };
+  }
+
+  // Sanitize user input
+  static sanitizeInput(input) {
+    if (typeof input !== 'string') {
+      return '';
+    }
+
+    return input
+      .replace(/[<>]/g, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .trim();
+  }
+
+  // Validate room ID
+  static validateRoomId(roomId) {
+    if (!roomId || typeof roomId !== 'string') {
+      return false;
+    }
+
+    // Room ID should be alphanumeric with underscores
+    const roomIdPattern = /^[a-zA-Z0-9_]{1,50}$/;
+    return roomIdPattern.test(roomId);
+  }
+
+  // Validate user ID
+  static validateUserId(userId) {
+    if (!userId || typeof userId !== 'string') {
+      return false;
+    }
+
+    // User ID should be alphanumeric
+    const userIdPattern = /^[a-zA-Z0-9]{1,50}$/;
+    return userIdPattern.test(userId);
+  }
+
+  // Generate secure random ID
+  static generateSecureId(length = 16) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    return result;
+  }
+}
+```
+
+---
+
+## ⚠️ **ERROR HANDLING**
+
+### **1. Error Handler**
+
+```javascript
+class ErrorHandler {
+  constructor() {
+    this.errorLog = [];
+    this.maxLogSize = 100;
+  }
+
+  // Handle socket errors
+  handleSocketError(error, context = '') {
+    const errorInfo = {
+      type: 'socket_error',
+      error: error.message || error,
+      context: context,
+      timestamp: new Date().toISOString(),
+      stack: error.stack
+    };
+
+    this.logError(errorInfo);
+    this.onSocketError(errorInfo);
+  }
+
+  // Handle Redis errors
+  handleRedisError(error, context = '') {
+    const errorInfo = {
+      type: 'redis_error',
+      error: error.message || error,
+      context: context,
+      timestamp: new Date().toISOString(),
+      stack: error.stack
+    };
+
+    this.logError(errorInfo);
+    this.onRedisError(errorInfo);
+  }
+
+  // Handle API errors
+  handleApiError(error, context = '') {
+    const errorInfo = {
+      type: 'api_error',
+      error: error.message || error,
+      context: context,
+      timestamp: new Date().toISOString(),
+      status: error.status || 500
+    };
+
+    this.logError(errorInfo);
+    this.onApiError(errorInfo);
+  }
+
+  // Handle validation errors
+  handleValidationError(error, context = '') {
+    const errorInfo = {
+      type: 'validation_error',
+      error: error.message || error,
+      context: context,
+      timestamp: new Date().toISOString(),
+      field: error.field || 'unknown'
+    };
+
+    this.logError(errorInfo);
+    this.onValidationError(errorInfo);
+  }
+
+  // Log error
+  logError(errorInfo) {
+    this.errorLog.unshift(errorInfo);
+    
+    // Keep only recent errors
+    if (this.errorLog.length > this.maxLogSize) {
+      this.errorLog = this.errorLog.slice(0, this.maxLogSize);
+    }
+
+    // Log to console
+    console.error(`🔴 ${errorInfo.type.toUpperCase()}:`, errorInfo);
+  }
+
+  // Get error log
+  getErrorLog(limit = 10) {
+    return this.errorLog.slice(0, limit);
+  }
+
+  // Clear error log
+  clearErrorLog() {
+    this.errorLog = [];
+  }
+
+  // Get errors by type
+  getErrorsByType(type) {
+    return this.errorLog.filter(error => error.type === type);
+  }
+
+  // Error callbacks (override these)
+  onSocketError(errorInfo) {}
+  onRedisError(errorInfo) {}
+  onApiError(errorInfo) {}
+  onValidationError(errorInfo) {}
+}
+```
+
+### **2. Retry Manager**
+
+```javascript
+class RetryManager {
+  constructor(options = {}) {
+    this.maxRetries = options.maxRetries || 3;
+    this.retryDelay = options.retryDelay || 1000;
+    this.backoffMultiplier = options.backoffMultiplier || 2;
+    this.maxRetryDelay = options.maxRetryDelay || 10000;
+  }
+
+  // Retry with exponential backoff
+  async retryWithBackoff(fn, context = '') {
+    let lastError;
+    let delay = this.retryDelay;
+
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt}/${this.maxRetries} - ${context}`);
+        const result = await fn();
+        
+        if (attempt > 1) {
+          console.log(`✅ Success after ${attempt} attempts - ${context}`);
+        }
+        
+        return result;
+      } catch (error) {
+        lastError = error;
+        console.warn(`❌ Attempt ${attempt} failed - ${context}:`, error.message);
+
+        if (attempt < this.maxRetries) {
+          console.log(`⏰ Retrying in ${delay}ms...`);
+          await this.sleep(delay);
+          delay = Math.min(delay * this.backoffMultiplier, this.maxRetryDelay);
+        }
+      }
+    }
+
+    console.error(`🔴 All ${this.maxRetries} attempts failed - ${context}`);
+    throw lastError;
+  }
+
+  // Sleep utility
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Retry socket connection
+  async retrySocketConnection(socket) {
+    return this.retryWithBackoff(
+      () => new Promise((resolve, reject) => {
+        if (socket.connected) {
+          resolve(true);
+          return;
+        }
+
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout'));
+        }, 5000);
+
+        socket.once('connect', () => {
+          clearTimeout(timeout);
+          resolve(true);
+        });
+
+        socket.once('connect_error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+
+        socket.connect();
+      }),
+      'Socket connection'
+    );
+  }
+}
+```
+
+---
+
+## 📊 **BEST PRACTICES**
+
+### **1. Performance Optimization**
+
+```javascript
+class PerformanceOptimizer {
+  constructor() {
+    this.messageBuffer = [];
+    this.bufferSize = 10;
+    this.flushInterval = 1000; // 1 second
+    this.flushTimer = null;
+  }
+
+  // Batch messages to reduce socket emissions
+  batchMessage(message) {
+    this.messageBuffer.push(message);
+    
+    if (this.messageBuffer.length >= this.bufferSize) {
+      this.flushMessages();
+    } else if (!this.flushTimer) {
+      this.flushTimer = setTimeout(() => {
+        this.flushMessages();
+      }, this.flushInterval);
+    }
+  }
+
+  flushMessages() {
+    if (this.messageBuffer.length === 0) return;
+
+    const messages = [...this.messageBuffer];
+    this.messageBuffer = [];
+    
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+
+    this.onMessageBatch(messages);
+  }
+
+  // Throttle function calls
+  throttle(func, limit) {
+    let inThrottle;
+    return function() {
+      const args = arguments;
+      const context = this;
+      
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  }
+
+  // Debounce function calls
+  debounce(func, wait) {
+    let timeout;
+    return function() {
+      const context = this;
+      const args = arguments;
+      
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func.apply(context, args);
+      }, wait);
+    };
+  }
+
+  onMessageBatch(messages) {
+    // Override this to handle batched messages
+  }
+}
+```
+
+### **2. Memory Management**
+
+```javascript
+class MemoryManager {
+  constructor() {
+    this.memoryUsage = {
+      messages: 0,
+      gifts: 0,
+      notifications: 0,
+      users: 0
+    };
+    this.maxMemoryUsage = 50 * 1024 * 1024; // 50MB
+  }
+
+  // Monitor memory usage
+  trackMemoryUsage(type, size) {
+    this.memoryUsage[type] = (this.memoryUsage[type] || 0) + size;
+    
+    const totalUsage = Object.values(this.memoryUsage).reduce((a, b) => a + b, 0);
+    
+    if (totalUsage > this.maxMemoryUsage) {
+      console.warn('⚠️ Memory usage high:', this.memoryUsage);
+      this.cleanup();
+    }
+  }
+
+  // Cleanup old data
+  cleanup() {
+    console.log('🧹 Cleaning up memory...');
+    
+    // Clear old messages
+    if (this.messageHistory && this.messageHistory.length > 100) {
+      this.messageHistory = this.messageHistory.slice(-50);
+      this.memoryUsage.messages = this.memoryUsage.messages * 0.5;
+    }
+
+    // Clear old notifications
+    if (this.notifications && this.notifications.length > 50) {
+      this.notifications = this.notifications.slice(-25);
+      this.memoryUsage.notifications = this.memoryUsage.notifications * 0.5;
+    }
+
+    console.log('✅ Memory cleanup completed');
+  }
+
+  // Get memory usage
+  getMemoryUsage() {
+    return {
+      ...this.memoryUsage,
+      total: Object.values(this.memoryUsage).reduce((a, b) => a + b, 0),
+      maxUsage: this.maxMemoryUsage
+    };
+  }
+}
+```
+
+### **3. Connection Health Monitor**
+
+```javascript
+class ConnectionHealthMonitor {
+  constructor(socket) {
+    this.socket = socket;
+    this.healthStatus = {
+      socket: false,
+      redis: false,
+      api: false
+    };
+    this.pingInterval = null;
+    this.healthCheckInterval = 30000; // 30 seconds
+  }
+
+  startHealthCheck() {
+    this.pingInterval = setInterval(() => {
+      this.checkHealth();
+    }, this.healthCheckInterval);
+  }
+
+  stopHealthCheck() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  async checkHealth() {
+    // Check socket health
+    this.healthStatus.socket = this.socket.connected;
+
+    // Check API health
+    try {
+      const response = await fetch('http://localhost:3000/api/v1/system/health', {
+        method: 'GET',
+        timeout: 5000
+      });
+      this.healthStatus.api = response.ok;
+    } catch (error) {
+      this.healthStatus.api = false;
+    }
+
+    // Check Redis health (if using Redis client)
+    if (this.redisClient) {
+      try {
+        await this.redisClient.ping();
+        this.healthStatus.redis = true;
+      } catch (error) {
+        this.healthStatus.redis = false;
+      }
+    }
+
+    this.onHealthStatusUpdate(this.healthStatus);
+  }
+
+  getHealthStatus() {
+    return {
+      ...this.healthStatus,
+      overall: Object.values(this.healthStatus).every(status => status)
+    };
+  }
+
+  onHealthStatusUpdate(status) {
+    // Override this to handle health status updates
+    console.log('💊 Health status:', status);
+  }
+}
+```
+
+---
+
+## 🚀 **COMPLETE EXAMPLES**
+
+### **1. Complete Client Implementation**
+
+```javascript
+// complete-client.js
+import { io } from 'socket.io-client';
+
+class LivestreamClient {
+  constructor(options = {}) {
+    // Configuration
+    this.config = {
+      socketUrl: options.socketUrl || 'http://localhost:4001',
+      apiUrl: options.apiUrl || 'http://localhost:3000',
+      userId: options.userId,
+      username: options.username,
+      accessToken: options.accessToken,
+      refreshToken: options.refreshToken,
+      ...options
+    };
+
+    // State
+    this.socket = null;
+    this.isConnected = false;
+    this.currentRoom = null;
+    this.messageHistory = [];
+    this.notifications = [];
+    this.users = new Map();
+
+    // Managers
+    this.errorHandler = new ErrorHandler();
+    this.retryManager = new RetryManager();
+    this.performanceOptimizer = new PerformanceOptimizer();
+    this.memoryManager = new MemoryManager();
+
+    // Initialize
+    this.init();
+  }
+
+  // Initialize client
+  init() {
+    this.setupSocket();
+    this.setupEventListeners();
+    this.startHealthCheck();
+  }
+
+  // Setup socket connection
+  setupSocket() {
+    this.socket = io(this.config.socketUrl, {
+      path: '/socket',
+      transports: ['websocket'],
+      timeout: 20000,
+      forceNew: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    });
+  }
+
+  // Setup all event listeners
+  setupEventListeners() {
+    this.setupConnectionEvents();
+    this.setupRoomEvents();
+    this.setupChatEvents();
+    this.setupGiftEvents();
+    this.setupNotificationEvents();
+  }
+
+  // Connection events
+  setupConnectionEvents() {
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to socket server');
+      this.isConnected = true;
+      this.authenticate();
+      this.onConnected();
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected:', reason);
+      this.isConnected = false;
+      this.onDisconnected(reason);
+    });
+
+    this.socket.on('connect_error', (error) => {
+      console.error('🔴 Connection error:', error);
+      this.errorHandler.handleSocketError(error, 'Connection');
+    });
+
+    this.socket.on('reconnect', () => {
+      console.log('🔄 Reconnected');
+      this.authenticate();
+      if (this.currentRoom) {
+        this.rejoinRoom();
+      }
+    });
+  }
+
+  // Room events
+  setupRoomEvents() {
+    this.socket.on('joinedRoom', (response) => {
+      console.log('🏠 Joined room:', response);
+      this.currentRoom = response.data.roomId;
+      this.startPing();
+      this.onRoomJoined(response);
+    });
+
+    this.socket.on('userJoined', (data) => {
+      console.log('👤 User joined:', data);
+      this.users.set(data.userId, data);
+      this.onUserJoined(data);
+    });
+
+    this.socket.on('userLeft', (data) => {
+      console.log('👋 User left:', data);
+      this.users.delete(data.userId);
+      this.onUserLeft(data);
+    });
+
+    this.socket.on('roomUpdate', (data) => {
+      console.log('🔄 Room updated:', data);
+      this.onRoomUpdate(data);
+    });
+  }
+
+  // Chat events
+  setupChatEvents() {
+    this.socket.on('newMessage', (data) => {
+      console.log('💬 New message:', data);
+      this.addMessage(data);
+      this.onNewMessage(data);
+    });
+
+    this.socket.on('messageSent', (response) => {
+      console.log('✅ Message sent:', response);
+      this.onMessageSent(response);
+    });
+
+    this.socket.on('sendMessageError', (error) => {
+      console.error('❌ Send message error:', error);
+      this.onMessageError(error);
+    });
+  }
+
+  // Gift events
+  setupGiftEvents() {
+    this.socket.on('newGift', (data) => {
+      console.log('🎁 New gift:', data);
+      this.onNewGift(data);
+    });
+
+    this.socket.on('giftSent', (response) => {
+      console.log('✅ Gift sent:', response);
+      this.onGiftSent(response);
+    });
+
+    this.socket.on('sendGiftError', (error) => {
+      console.error('❌ Send gift error:', error);
+      this.onGiftError(error);
+    });
+  }
+
+  // Notification events
+  setupNotificationEvents() {
+    this.socket.on('notification', (data) => {
+      console.log('🔔 New notification:', data);
+      this.addNotification(data);
+      this.onNewNotification(data);
+    });
+  }
+
+  // Authenticate with server
+  authenticate() {
+    if (!this.config.accessToken) {
+      console.warn('⚠️ No access token available');
+      return;
+    }
+
+    this.socket.emit('authenticate', {
+      token: this.config.accessToken,
+      userId: this.config.userId
+    });
+  }
+
+  // Join room
+  async joinRoom(roomId, userData = {}) {
+    if (!this.isConnected) {
+      console.error('❌ Not connected to server');
+      return false;
+    }
+
+    try {
+      const joinData = {
+        roomId: roomId,
+        userId: this.config.userId,
+        username: this.config.username,
+        ...userData
+      };
+
+      console.log('🚪 Joining room:', roomId);
+      this.socket.emit('joinRoom', joinData);
+      return true;
+    } catch (error) {
+      this.errorHandler.handleSocketError(error, 'Join room');
+      return false;
+    }
+  }
+
+  // Rejoin room after reconnection
+  async rejoinRoom() {
+    if (this.currentRoom) {
+      console.log('🔄 Rejoining room:', this.currentRoom);
+      await this.joinRoom(this.currentRoom);
+    }
+  }
+
+  // Send message
+  async sendMessage(message, roomId = this.currentRoom) {
+    if (!this.isConnected || !roomId) {
+      console.error('❌ Cannot send message');
+      return false;
+    }
+
+    // Validate message
+    const validation = SecurityUtils.validateMessage(message);
+    if (!validation.valid) {
+      console.error('❌ Invalid message:', validation.reason);
+      return false;
+    }
+
+    try {
+      const messageData = {
+        roomId: roomId,
+        userId: this.config.userId,
+        username: this.config.username,
+        message: SecurityUtils.sanitizeInput(message),
+        timestamp: new Date().toISOString()
+      };
+
+      this.socket.emit('sendMessage', messageData);
+      return true;
+    } catch (error) {
+      this.errorHandler.handleSocketError(error, 'Send message');
+      return false;
+    }
+  }
+
+  // Send gift
+  async sendGift(giftData, roomId = this.currentRoom) {
+    if (!this.isConnected || !roomId) {
+      console.error('❌ Cannot send gift');
+      return false;
+    }
+
+    try {
+      const giftMessage = {
+        roomId: roomId,
+        senderId: this.config.userId,
+        senderName: this.config.username,
+        ...giftData,
+        timestamp: new Date().toISOString()
+      };
+
+      this.socket.emit('sendGift', giftMessage);
+      return true;
+    } catch (error) {
+      this.errorHandler.handleSocketError(error, 'Send gift');
+      return false;
+    }
+  }
+
+  // Start ping
+  startPing() {
+    this.pingInterval = setInterval(() => {
+      if (this.isConnected && this.currentRoom) {
+        this.socket.emit('viewerPing', {
+          roomId: this.currentRoom,
+          userId: this.config.userId,
+          username: this.config.username,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }, 30000); // 30 seconds
+  }
+
+  // Stop ping
+  stopPing() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  // Start health check
+  startHealthCheck() {
+    this.healthMonitor = new ConnectionHealthMonitor(this.socket);
+    this.healthMonitor.startHealthCheck();
+  }
+
+  // Add message to history
+  addMessage(message) {
+    this.messageHistory.push(message);
+    this.memoryManager.trackMemoryUsage('messages', JSON.stringify(message).length);
+    
+    // Keep only last 100 messages
+    if (this.messageHistory.length > 100) {
+      this.messageHistory = this.messageHistory.slice(-100);
+    }
+  }
+
+  // Add notification
+  addNotification(notification) {
+    this.notifications.unshift(notification);
+    this.memoryManager.trackMemoryUsage('notifications', JSON.stringify(notification).length);
+    
+    // Keep only last 50 notifications
+    if (this.notifications.length > 50) {
+      this.notifications = this.notifications.slice(0, 50);
+    }
+  }
+
+  // Get methods
+  getMessageHistory(limit = 50) {
+    return this.messageHistory.slice(-limit);
+  }
+
+  getNotifications(limit = 20) {
+    return this.notifications.slice(0, limit);
+  }
+
+  getUsers() {
+    return Array.from(this.users.values());
+  }
+
+  getHealthStatus() {
+    return this.healthMonitor ? this.healthMonitor.getHealthStatus() : null;
+  }
+
+  // Disconnect
+  disconnect() {
+    console.log('👋 Disconnecting from server');
+    
+    this.stopPing();
+    
+    if (this.healthMonitor) {
+      this.healthMonitor.stopHealthCheck();
+    }
+    
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+    
+    this.isConnected = false;
+    this.currentRoom = null;
+  }
+
+  // Event callbacks (override these in your implementation)
+  onConnected() {}
+  onDisconnected(reason) {}
+  onRoomJoined(response) {}
+  onUserJoined(data) {}
+  onUserLeft(data) {}
+  onRoomUpdate(data) {}
+  onNewMessage(data) {}
+  onMessageSent(response) {}
+  onMessageError(error) {}
+  onNewGift(data) {}
+  onGiftSent(response) {}
+  onGiftError(error) {}
+  onNewNotification(data) {}
+}
+
+// Export for use
+export default LivestreamClient;
+```
+
+### **2. React Hook Implementation**
+
+```javascript
+// useLivestreamSocket.js
+import { useEffect, useState, useCallback, useRef } from 'react';
+import LivestreamClient from './complete-client';
+
+export function useLivestreamSocket(config) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [currentRoom, setCurrentRoom] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [healthStatus, setHealthStatus] = useState(null);
+  
+  const clientRef = useRef(null);
+
+  // Initialize client
+  useEffect(() => {
+    if (!config.userId || !config.username) {
+      console.warn('⚠️ Missing required config: userId or username');
+      return;
+    }
+
+    clientRef.current = new LivestreamClient({
+      ...config,
+      
+      // Connection callbacks
+      onConnected: () => {
+        setIsConnected(true);
+      },
+      
+      onDisconnected: (reason) => {
+        setIsConnected(false);
+        setCurrentRoom(null);
+      },
+      
+      // Room callbacks
+      onRoomJoined: (response) => {
+        setCurrentRoom(response.data.roomId);
+      },
+      
+      onUserJoined: (data) => {
+        setUsers(prev => [...prev.filter(u => u.userId !== data.userId), data]);
+      },
+      
+      onUserLeft: (data) => {
+        setUsers(prev => prev.filter(u => u.userId !== data.userId));
+      },
+      
+      // Message callbacks
+      onNewMessage: (data) => {
+        setMessages(prev => [...prev, data]);
+      },
+      
+      // Notification callbacks
+      onNewNotification: (data) => {
+        setNotifications(prev => [data, ...prev]);
+      }
+    });
+
+    // Health check
+    const healthInterval = setInterval(() => {
+      if (clientRef.current) {
+        setHealthStatus(clientRef.current.getHealthStatus());
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(healthInterval);
+      if (clientRef.current) {
+        clientRef.current.disconnect();
+      }
+    };
+  }, [config]);
+
+  // Actions
+  const joinRoom = useCallback((roomId, userData = {}) => {
+    return clientRef.current?.joinRoom(roomId, userData);
+  }, []);
+
+  const sendMessage = useCallback((message) => {
+    return clientRef.current?.sendMessage(message);
+  }, []);
+
+  const sendGift = useCallback((giftData) => {
+    return clientRef.current?.sendGift(giftData);
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+  const clearNotifications = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  return {
+    // State
+    isConnected,
+    currentRoom,
+    messages,
+    notifications,
+    users,
+    healthStatus,
+    
+    // Actions
+    joinRoom,
+    sendMessage,
+    sendGift,
+    clearMessages,
+    clearNotifications,
+    
+    // Client reference
+    client: clientRef.current
+  };
+}
+```
+
+### **3. Vue Composition API Implementation**
+
+```javascript
+// useLivestreamSocket.js (Vue 3)
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import LivestreamClient from './complete-client';
+
+export function useLivestreamSocket(config) {
+  const isConnected = ref(false);
+  const currentRoom = ref(null);
+  const messages = ref([]);
+  const notifications = ref([]);
+  const users = ref([]);
+  const healthStatus = ref(null);
+  
+  let client = null;
+
+  const state = reactive({
+    isConnected: false,
+    currentRoom: null,
+    messages: [],
+    notifications: [],
+    users: [],
+    healthStatus: null
+  });
+
+  const initializeClient = () => {
+    if (!config.userId || !config.username) {
+      console.warn('⚠️ Missing required config: userId or username');
+      return;
+    }
+
+    client = new LivestreamClient({
+      ...config,
+      
+      onConnected: () => {
+        state.isConnected = true;
+        isConnected.value = true;
+      },
+      
+      onDisconnected: (reason) => {
+        state.isConnected = false;
+        state.currentRoom = null;
+        isConnected.value = false;
+        currentRoom.value = null;
+      },
+      
+      onRoomJoined: (response) => {
+        state.currentRoom = response.data.roomId;
+        currentRoom.value = response.data.roomId;
+      },
+      
+      onUserJoined: (data) => {
+        const existingIndex = state.users.findIndex(u => u.userId === data.userId);
+        if (existingIndex !== -1) {
+          state.users[existingIndex] = data;
+        } else {
+          state.users.push(data);
+        }
+        users.value = [...state.users];
+      },
+      
+      onUserLeft: (data) => {
+        state.users = state.users.filter(u => u.userId !== data.userId);
+        users.value = [...state.users];
+      },
+      
+      onNewMessage: (data) => {
+        state.messages.push(data);
+        messages.value = [...state.messages];
+      },
+      
+      onNewNotification: (data) => {
+        state.notifications.unshift(data);
+        notifications.value = [...state.notifications];
+      }
+    });
+
+    // Health check
+    const healthInterval = setInterval(() => {
+      if (client) {
+        const status = client.getHealthStatus();
+        state.healthStatus = status;
+        healthStatus.value = status;
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(healthInterval);
+    };
+  };
+
+  const joinRoom = (roomId, userData = {}) => {
+    return client?.joinRoom(roomId, userData);
+  };
+
+  const sendMessage = (message) => {
+    return client?.sendMessage(message);
+  };
+
+  const sendGift = (giftData) => {
+    return client?.sendGift(giftData);
+  };
+
+  const clearMessages = () => {
+    state.messages = [];
+    messages.value = [];
+  };
+
+  const clearNotifications = () => {
+    state.notifications = [];
+    notifications.value = [];
+  };
+
+  onMounted(() => {
+    const cleanup = initializeClient();
+    
+    onUnmounted(() => {
+      cleanup?.();
+      client?.disconnect();
+    });
+  });
+
+  return {
+    // Reactive state
+    isConnected,
+    currentRoom,
+    messages,
+    notifications,
+    users,
+    healthStatus,
+    
+    // Reactive object
+    state,
+    
+    // Actions
+    joinRoom,
+    sendMessage,
+    sendGift,
+    clearMessages,
+    clearNotifications,
+    
+    // Client reference
+    client
+  };
+}
+```
+
+---
+
+## ⚠️ **LƯU Ý QUAN TRỌNG**
+
+### **1. Environment Configuration**
+```javascript
+// Development
+const config = {
+  socketUrl: 'http://localhost:4001',
+  apiUrl: 'http://localhost:3000'
+};
+
+// Production
+const config = {
+  socketUrl: 'https://apisocket.loltips.net',
+  apiUrl: 'https://apilive.loltips.net'
+};
+```
+
+### **2. Authentication**
+- Luôn cần `accessToken` để authenticate
+- Tự động refresh token khi hết hạn
+- Xử lý lỗi authentication gracefully
+
+### **3. Rate Limiting**
+- Message: 1 tin nhắn/giây, max 30 tin nhắn/phút
+- Gift: Tùy thuộc vào balance
+- Ping: 30 giây/lần
+
+### **4. Error Handling**
+- Luôn wrap socket operations trong try-catch
+- Implement retry logic cho connection failures
+- Log errors để debug
+
+### **5. Memory Management**
+- Giới hạn message history (100 tin nhắn)
+- Giới hạn notifications (50 thông báo)
+- Cleanup old data định kỳ
+
+### **6. Security**
+- Validate tất cả input
+- Sanitize user content
+- Không trust client-side data
+
+### **7. Performance**
+- Sử dụng message batching
+- Throttle/debounce frequent operations
+- Monitor memory usage
+
+---
+
+## 🎯 **TESTING**
+
+### **1. Unit Tests**
+```javascript
+// test/livestream-client.test.js
+import LivestreamClient from '../src/complete-client';
+
+describe('LivestreamClient', () => {
+  let client;
+  
+  beforeEach(() => {
+    client = new LivestreamClient({
+      userId: 'test-user',
+      username: 'Test User',
+      accessToken: 'test-token'
+    });
+  });
+  
+  afterEach(() => {
+    client.disconnect();
+  });
+  
+  test('should connect to socket server', (done) => {
+    client.onConnected = () => {
+      expect(client.isConnected).toBe(true);
+      done();
+    };
+  });
+  
+  test('should join room successfully', async () => {
+    const result = await client.joinRoom('test-room');
+    expect(result).toBe(true);
+  });
+  
+  test('should send message successfully', async () => {
+    await client.joinRoom('test-room');
+    const result = await client.sendMessage('Hello World');
+    expect(result).toBe(true);
+  });
+});
+```
+
+### **2. Integration Tests**
+```javascript
+// test/integration.test.js
+describe('Socket Integration', () => {
+  test('should receive messages from other users', (done) => {
+    const client1 = new LivestreamClient({ userId: 'user1', username: 'User 1' });
+    const client2 = new LivestreamClient({ userId: 'user2', username: 'User 2' });
+    
+    client1.onNewMessage = (data) => {
+      expect(data.message).toBe('Hello from User 2');
+      expect(data.userId).toBe('user2');
+      done();
+    };
+    
+    Promise.all([
+      client1.joinRoom('test-room'),
+      client2.joinRoom('test-room')
+    ]).then(() => {
+      client2.sendMessage('Hello from User 2');
+    });
+  });
+});
+```
+
+---
+
+## 🚀 **DEPLOYMENT**
+
+### **1. Build Configuration**
+```javascript
+// webpack.config.js
+module.exports = {
+  mode: 'production',
+  entry: './src/complete-client.js',
+  output: {
+    filename: 'livestream-client.min.js',
+    library: 'LivestreamClient',
+    libraryTarget: 'umd'
+  },
+  resolve: {
+    fallback: {
+      "buffer": require.resolve("buffer"),
+      "process": require.resolve("process/browser")
+    }
+  }
+};
+```
+
+### **2. CDN Usage**
+```html
+<!-- Include từ CDN -->
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+<script src="https://your-cdn.com/livestream-client.min.js"></script>
+
+<script>
+  const client = new LivestreamClient({
+    socketUrl: 'https://apisocket.loltips.net',
+    userId: 'user123',
+    username: 'John Doe',
+    accessToken: 'your-jwt-token'
+  });
+  
+  client.joinRoom('live-room-123');
+</script>
+```
+
+---
+
+## 📚 **TÀI LIỆU THAM KHẢO**
+
+- [Socket.IO Client Documentation](https://socket.io/docs/v4/client-api/)
+- [Redis Client Documentation](https://redis.js.org/)
+- [WebSocket Security Best Practices](https://owasp.org/www-community/attacks/WebSocket_attacks)
+- [Real-time Application Performance](https://web.dev/performance-budgets-101/)
+
+---
+
+## 🆘 **HỖ TRỢ**
+
+Nếu gặp vấn đề, vui lòng:
+1. Kiểm tra connection status
+2. Xem error logs
+3. Verify authentication tokens
+4. Check network connectivity
+5. Monitor memory usage
+
+**Happy Coding! 🎉** 

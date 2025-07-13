@@ -1,0 +1,348 @@
+# PHÂN TÍCH DỰ ÁN LIVESTREAM WEB APPLICATION
+
+## 1. TỔNG QUAN DỰ ÁN
+- **Tên dự án**: LiveApp - Ứng dụng livestream web
+- **Công nghệ chính**: React 18 + TypeScript + Vite
+- **Mục đích**: Ứng dụng livestream tương tự TikTok Live, cho phép người dùng phát sóng trực tiếp và xem livestream
+
+## 2. CÔNG NGHỆ VÀ THƯ VIỆN SỬ DỤNG
+
+### Frontend Framework & Tools:
+- **React 18.2.0** - Framework chính
+- **TypeScript** - Ngôn ngữ lập trình
+- **Vite** - Build tool
+- **React Router DOM 6.21.1** - Routing
+- **Tailwind CSS 3.4.1** - Styling framework
+- **SCSS/Sass** - CSS preprocessor
+
+### State Management & API:
+- **React Query 3.39.3** - Data fetching và caching
+- **Axios** - HTTP client
+- **React Context** - State management toàn cục
+
+### UI & UX Libraries:
+- **Lucide React** - Icon library
+- **React Hot Toast** - Notification system
+- **Swiper 11.2.8** - Carousel/slider component
+- **Headless UI** - Unstyled UI components
+- **Heroicons** - Icon library
+
+### Livestream & Media:
+- **LiveKit Client 2.15.2** - Real-time video/audio streaming
+- **@livekit/components-react 2.9.13** - React components for LiveKit
+- **@livekit/components-styles 1.1.6** - Styling for LiveKit components
+- **React Webcam 7.2.0** - Camera access (fallback)
+- **React Camera Pro 1.4.0** - Advanced camera controls (fallback)
+- **Socket.io Client 4.8.1** - Real-time communication
+
+### Internationalization:
+- **i18next 25.2.1** - Internationalization framework
+- **react-i18next 15.5.3** - React binding for i18next
+- **i18next-browser-languagedetector** - Language detection
+
+## 3. KIẾN TRÚC DỰ ÁN
+
+### Cấu trúc thư mục:
+```
+src/
+├── apis/           # API calls
+├── components/     # Reusable components
+├── contexts/       # React contexts
+├── i18n/          # Internationalization
+├── layouts/       # Layout components
+├── pages/         # Page components
+├── routes/        # Routing configuration
+├── styles/        # Global styles
+├── types/         # TypeScript types
+└── utils/         # Utility functions
+```
+
+### Routing Structure:
+- **Public Routes**: `/login` - Trang đăng nhập
+- **Protected Routes**: 
+  - `/` - Trang chủ (danh sách livestream)
+  - `/message` - Tin nhắn
+  - `/profile` - Hồ sơ người dùng
+  - `/live/:id` - Xem livestream
+  - `/stream` - Tạo livestream
+
+## 4. CHỨC NĂNG CHÍNH
+
+### 4.1 Authentication System:
+- **Đăng nhập/Đăng ký** với email và password
+- **JWT Token** authentication với refresh token
+- **Auto-refresh token** khi hết hạn
+- **Protected routes** với authentication guard
+- **Persistent login** với localStorage
+
+### 4.2 Livestream Features (LiveKit Integration):
+- **Tạo livestream**: Người dùng có thể tạo phòng livestream với:
+  - Tiêu đề và mô tả
+  - Thumbnail upload (Cloudinary)
+  - LiveKit room creation với roomId và token
+  - Chat và gift enabled options
+  - Real-time video/audio streaming
+- **Xem livestream**: Người dùng có thể xem livestream qua LiveKit WebRTC
+- **Quản lý livestream**: Start/stop livestream với LiveKit room management
+- **Chat system**: Real-time chat trong livestream
+- **Viewer management**: Theo dõi số lượng người xem real-time
+- **Media controls**: Camera/microphone toggle, device selection
+
+### 4.3 Home Page Features:
+- **Banner carousel** với auto-play
+- **Danh sách livestream** đang phát sóng
+- **Filter livestream** theo trạng thái (live)
+- **Recommended section** với thumbnail và thông tin streamer
+- **View count** và like functionality
+
+### 4.4 User Profile:
+- **Thông tin cá nhân**: Tên, email, avatar
+- **Cập nhật profile**: Tên và avatar
+- **Đổi mật khẩu**: Old password validation
+- **Logout functionality**
+
+### 4.5 Real-time Features:
+- **Socket.io** integration cho real-time communication
+- **Live viewer count** updates
+- **Chat system** (commented out nhưng có cấu trúc)
+- **Gift system** (commented out nhưng có cấu trúc)
+
+## 5. TÍNH NĂNG LIVESTREAM VỚI LIVEKIT
+
+### 5.1 Tích hợp từ HTML Files
+- **Tham khảo**: stream.html và viewer.html đã được backend test thành công
+- **WebSocket URL**: wss://wslive.loltips.net (từ HTML files)
+- **API Endpoints** (đã được backend implement):
+  - `/stream/token` - Lấy token cho viewer
+  - `/stream/livekit/stop-demo/${roomId}` - Dừng demo stream
+  - `/stream/livekit/stop/${roomId}` - Disconnect stream
+  - `/stream/livekit` - Tạo room mới
+  - `/stream/livekit/${roomId}/join` - Join room
+  - `/stream/livekit/${roomId}/token` - Lấy token cho room
+
+### 5.2 Streamer Features (Host View)
+- **Split Screen Layout**: Local video + Activity Feed
+- **Real-time Activity Feed**: Join/Leave/Comment/Gift notifications
+- **Stream Timer**: Hiển thị thời gian stream
+- **Viewer Count**: Đếm số người xem real-time
+- **Camera/Mic Controls**: Toggle on/off với visual feedback
+- **Performance Monitoring**: Theo dõi packet loss, tự động tối ưu
+- **Viewer Link Generation**: Tạo link cho viewer với roomId
+- **Mobile Optimization**: 640x360@15fps với simulcast
+
+### 5.3 Viewer Features (Viewer View)
+- **Fullscreen Video**: FocusLayout cho trải nghiệm tốt nhất
+- **Audio Autoplay Handling**: Unmute button khi browser chặn autoplay
+- **Stream Info Overlay**: Hiển thị thông tin streamer và stream
+- **Connection Management**: Retry logic, error handling
+- **Auto-disconnect**: Khi stream kết thúc hoặc không còn streamer
+- **Browser Support Check**: Cảnh báo Safari iOS, khuyến khích Chrome/Firefox
+
+### 5.4 Technical Implementation
+- **LiveKit Client**: 2.15.2 với WebRTC
+- **Connection State Management**: Connecting → Connected → Streaming → Disconnected
+- **Error Handling**: Network issues, token expiry, room not found
+- **API Integration**: Proper cleanup với stop/disconnect endpoints
+- **Mobile Responsive**: Adaptive layout cho mobile devices
+- **Performance Optimization**: Packet loss monitoring, quality adjustment
+
+### 5.5 UI/UX Components
+- **Activity Feed**: Real-time notifications với animations
+- **Control Overlays**: Status, stream info, controls, viewer link
+- **Button Styles**: Gradient buttons với hover effects
+- **Mobile Layout**: Responsive design cho mobile viewers
+- **Loading States**: Proper loading và error states
+- **Toast Notifications**: User feedback cho actions
+
+### 5.6 URL Parameters Support
+- **Direct Streaming**: `stream.html?room=ROOM_ID&token=TOKEN`
+- **Direct Viewing**: `viewer.html?room=ROOM_ID&token=TOKEN`
+- **React Integration**: Tương thích với React Router
+- **Fallback Logic**: API token generation nếu không có URL params
+
+### 5.7 Browser Compatibility
+- **Chrome**: Full support, recommended
+- **Firefox**: Full support
+- **Safari**: Basic support, iOS có limitations
+- **Mobile**: Optimized settings cho mobile devices
+- **WebRTC**: Required, fallback error messages
+
+### 5.8 Security & Performance
+- **Token-based Authentication**: JWT tokens với expiry
+- **Room Management**: Proper cleanup khi disconnect
+- **Performance Monitoring**: Real-time stats monitoring
+- **Error Recovery**: Retry logic, graceful degradation
+- **Memory Management**: Proper cleanup của tracks và elements
+
+## 6. API ENDPOINTS
+
+### Base URL: `https://apilive.loltips.net/api/v1`
+
+### Authentication APIs:
+- `POST /auth/login` - Đăng nhập
+- `POST /auth/register` - Đăng ký
+- `POST /auth/refresh-token` - Refresh token
+- `POST /auth/log-out` - Đăng xuất
+
+### User APIs:
+- `GET /user/me` - Lấy thông tin user
+- `PUT /user/update-profile` - Cập nhật profile
+- `PUT /user/change-password` - Đổi mật khẩu
+
+### Livestream APIs:
+- `GET /stream` - Lấy danh sách livestream
+- `POST /stream` - Tạo livestream mới (legacy)
+- `POST /stream/:roomId/join` - Join vào phòng livestream (legacy)
+- `DELETE /stream/:streamId` - Dừng livestream (legacy)
+
+### LiveKit APIs:
+- `POST /stream/livekit` - Tạo LiveKit room mới
+- `POST /stream/livekit/:roomId/join` - Join vào LiveKit room
+- `POST /stream/livekit/:roomId/token` - Lấy token để join room
+- `DELETE /stream/livekit/:roomId` - Dừng LiveKit room
+
+## 7. TÍNH NĂNG ĐẶC BIỆT
+
+### 7.1 Responsive Design:
+- **Mobile-first approach** với max-width 600px
+- **Dark mode support** với Tailwind CSS
+- **Responsive layout** cho các thiết bị khác nhau
+
+### 7.2 Internationalization:
+- **Đa ngôn ngữ**: Tiếng Việt và Tiếng Anh
+- **Language detection** tự động
+- **Dynamic language switching**
+
+### 7.3 Image Upload:
+- **Cloudinary integration** cho upload ảnh
+- **Thumbnail generation** cho livestream
+- **Avatar upload** cho user profile
+
+### 7.4 Error Handling:
+- **Global error handling** với axios interceptors
+- **Toast notifications** cho user feedback
+- **Loading states** với React Query
+
+## 8. SECURITY FEATURES
+
+### 8.1 Authentication Security:
+- **JWT tokens** với expiration
+- **Refresh token rotation**
+- **Automatic token refresh**
+- **Secure token storage** trong localStorage
+
+### 8.2 API Security:
+- **Bearer token** authentication
+- **Request timeout** (10 seconds)
+- **CORS handling**
+- **Error response handling**
+
+## 9. PERFORMANCE OPTIMIZATIONS
+
+### 9.1 Code Splitting:
+- **Lazy loading** cho routes
+- **Component-based splitting**
+
+### 9.2 Data Fetching:
+- **React Query caching**
+- **Background refetching disabled**
+- **Optimistic updates**
+
+### 9.3 Asset Optimization:
+- **Vite build optimization**
+- **Image lazy loading**
+- **CSS minification**
+
+## 10. DEVELOPMENT WORKFLOW
+
+### 10.1 Code Quality:
+- **ESLint** configuration
+- **Prettier** code formatting
+- **TypeScript** strict mode
+- **Husky** pre-commit hooks (nếu có)
+
+### 10.2 Build Process:
+- **Vite** development server
+- **Hot module replacement**
+- **Production build optimization**
+- **Vercel deployment** configuration
+
+## 11. HƯỚNG DẪN PHÁT TRIỂN
+
+### 11.1 Cài đặt và chạy:
+```bash
+yarn install
+yarn dev          # Development server
+yarn build        # Production build
+yarn preview      # Preview production build
+```
+
+### 11.2 Code Standards:
+- **React functional components** với hooks
+- **TypeScript interfaces** cho type safety
+- **Tailwind CSS** cho styling
+- **React Query** cho data fetching
+- **Context API** cho global state
+
+### 11.3 Folder Structure Standards:
+- **Components**: Reusable UI components
+- **Pages**: Route-based page components
+- **APIs**: Service layer cho API calls
+- **Types**: TypeScript type definitions
+- **Utils**: Helper functions và utilities
+
+## 12. TÍNH NĂNG CHƯA HOÀN THÀNH
+
+### 12.1 Chat System:
+- Code đã được comment out
+- Cấu trúc UI đã có
+- Cần implement real-time messaging
+
+### 12.2 Gift System:
+- UI components đã có
+- API endpoints chưa được implement
+- Cần tích hợp payment system
+
+### 12.3 Social Features:
+- Follow/unfollow system
+- Like/unlike functionality
+- User ranking system
+
+## 13. KHUYẾN NGHỊ PHÁT TRIỂN
+
+### 13.1 Cải thiện Performance:
+- Implement virtual scrolling cho danh sách livestream
+- Optimize image loading với lazy loading
+- Add service worker cho offline support
+
+### 13.2 Tăng cường Security:
+- Implement CSRF protection
+- Add input validation
+- Secure API endpoints
+
+### 13.3 User Experience:
+- Add loading skeletons
+- Implement error boundaries
+- Add accessibility features
+
+### 13.4 Monitoring:
+- Add error tracking (Sentry)
+- Implement analytics
+- Add performance monitoring
+
+## 14. DEPLOYMENT
+
+### 14.1 Production Setup:
+- **Vercel** deployment configuration
+- **Environment variables** management
+- **Build optimization**
+- **CDN integration**
+
+### 14.2 Environment Configuration:
+- Development: Local development server
+- Production: Vercel hosting
+- API: External API server (apilive.loltips.net)
+
+---
+
+**Lưu ý**: Đây là một dự án livestream web hoàn chỉnh với các tính năng cơ bản của một nền tảng livestream. Code được viết clean, có cấu trúc tốt và dễ mở rộng. 

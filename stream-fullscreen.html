@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Live Streamer</title>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #000;
+        color: white;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      /* Fullscreen video container */
+      #video-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #000;
+        display: flex;
+        z-index: 1;
+      }
+      
+      /* Split screen for streamer */
+      .video-half {
+        flex: 1;
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .local-video {
+        border-right: 2px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 107, 107, 0.1);
+      }
+      
+      .remote-video {
+        background: rgba(76, 175, 80, 0.1);
+      }
+      
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      
+      audio {
+        display: none;
+      }
+      
+      .placeholder {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 20px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 30px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+      }
+      
+      /* Popup overlays */
+      .overlay {
+        position: fixed;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+      }
+      
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      /* Status overlay (top center) */
+      .status-overlay {
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        min-width: 350px;
+        background: rgba(255, 107, 107, 0.9);
+        border: 1px solid #ff6b6b;
+      }
+      
+      /* Error popup */
+      .error-popup {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(244, 67, 54, 0.9);
+        border: 1px solid #f44336;
+        animation: shake 0.5s ease-in-out;
+      }
+      
+      @keyframes shake {
+        0%, 100% { transform: translate(-50%, -50%); }
+        25% { transform: translate(-52%, -50%); }
+        75% { transform: translate(-48%, -50%); }
+      }
+      
+      /* Loading popup */
+      .loading-popup {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(33, 150, 243, 0.9);
+        border: 1px solid #2196f3;
+        text-align: center;
+      }
+      
+      /* Stream info popup (top right) */
+      .stream-info-popup {
+        top: 20px;
+        right: 20px;
+        background: rgba(76, 175, 80, 0.9);
+        border: 1px solid #4caf50;
+        max-width: 300px;
+      }
+      
+      /* Controls popup (bottom center) */
+      .controls-popup {
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(156, 39, 176, 0.9);
+        border: 1px solid #9c27b0;
+        text-align: center;
+        max-width: 600px;
+      }
+      
+      /* Viewer link popup (bottom right) */
+      .viewer-link-popup {
+        bottom: 20px;
+        right: 20px;
+        background: rgba(255, 152, 0, 0.9);
+        border: 1px solid #ff9800;
+        max-width: 350px;
+      }
+      
+      .status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: bold;
+        margin: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      .status-connecting { 
+        background: linear-gradient(45deg, #ff9800, #f57c00); 
+        color: white;
+      }
+      .status-connected { 
+        background: linear-gradient(45deg, #4caf50, #388e3c); 
+        color: white;
+      }
+      .status-streaming { 
+        background: linear-gradient(45deg, #2196f3, #1976d2); 
+        color: white;
+      }
+      .status-error { 
+        background: linear-gradient(45deg, #f44336, #d32f2f); 
+        color: white;
+      }
+      .status-disconnected { 
+        background: linear-gradient(45deg, #9e9e9e, #616161); 
+        color: white;
+      }
+      
+      button {
+        border: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        margin: 5px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      .btn-start {
+        background: linear-gradient(45deg, #4CAF50, #388e3c);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      }
+      
+      .btn-start:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+      }
+      
+      .btn-stop {
+        background: linear-gradient(45deg, #f44336, #d32f2f);
+        color: white;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+      }
+      
+      .btn-stop:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+      }
+      
+      .btn-toggle {
+        background: linear-gradient(45deg, #2196F3, #1976d2);
+        color: white;
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+      }
+      
+      .btn-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+      }
+      
+      .btn-toggle.disabled {
+        background: linear-gradient(45deg, #9e9e9e, #616161);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
+      .btn-copy {
+        background: linear-gradient(45deg, #ff9800, #f57c00);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        font-size: 12px;
+        padding: 8px 15px;
+      }
+      
+      .btn-copy:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+      }
+      
+      button:active {
+        transform: translateY(0);
+      }
+      
+      .participant {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 15px;
+        margin: 3px;
+        font-size: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      
+      .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 3px solid #fff;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 10px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Auto-hide overlays */
+      .auto-hide {
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+      }
+      
+      .auto-hide:hover {
+        opacity: 1;
+      }
+      
+      /* Info text */
+      .info-text {
+        font-size: 12px;
+        margin-top: 10px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      
+      .viewer-link {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-family: monospace;
+        font-size: 11px;
+        word-break: break-all;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      h3 {
+        margin: 0 0 10px 0;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      
+      /* Hide scrollbars */
+      ::-webkit-scrollbar {
+        display: none;
+      }
+      
+      /* Timer display */
+      .timer {
+        font-size: 18px;
+        font-weight: bold;
+        color: #ff6b6b;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Fullscreen video container -->
+    <div id="video-container">
+      <div class="video-half local-video" id="local-video">
+        <div class="placeholder">📹 Camera của bạn<br><small>Sẽ hiển thị khi bắt đầu stream</small></div>
+      </div>
+      <div class="video-half remote-video" id="remote-video">
+        <div class="placeholder">👥 Viewers<br><small>Viewer sẽ thấy camera của bạn ở đây</small></div>
+      </div>
+    </div>
+
+    <!-- Status Overlay (Top Center) -->
+    <div id="status-overlay" class="overlay status-overlay auto-hide">
+      <h3>📡 Stream Status</h3>
+      <div>
+        <span class="status-badge" id="connection-status">Đang khởi tạo...</span>
+      </div>
+      <div class="info-text">
+        <strong>Room:</strong> <span id="room-display">-</span><br>
+        <strong>Streamer:</strong> <span id="identity-display">-</span>
+      </div>
+    </div>
+
+    <!-- Loading Popup (Center) -->
+    <div id="loading-popup" class="overlay loading-popup" style="display: none;">
+      <div class="spinner"></div>
+      <span>Đang khởi tạo stream...</span>
+    </div>
+
+    <!-- Error Popup (Center) -->
+    <div id="error-popup" class="overlay error-popup" style="display: none;">
+      <h3>❌ Lỗi Stream</h3>
+      <div id="error-message"></div>
+      <button onclick="hideErrorPopup()" style="margin-top: 15px;">Đóng</button>
+    </div>
+
+    <!-- Stream Info Popup (Top Right) -->
+    <div id="stream-info-popup" class="overlay stream-info-popup auto-hide" style="display: none;">
+      <h3>📊 Stream Info</h3>
+      <div class="timer" id="stream-timer">⏰ 00:00:00</div>
+      <div>👥 Viewers: <span id="viewer-count">0</span></div>
+      <div id="participant-list"></div>
+    </div>
+      
+    <!-- Controls Popup (Bottom Center) -->
+    <div id="controls-popup" class="overlay controls-popup auto-hide" style="display: none;">
+      <div style="margin-bottom: 10px;">
+        <button id="start-btn" class="btn-start" onclick="startStreaming()">🎬 Bắt đầu Stream</button>
+        <button id="stop-btn" class="btn-stop" onclick="stopStreaming()" style="display: none;">⏹️ Dừng Stream</button>
+      </div>
+      <div>
+        <button id="camera-btn" class="btn-toggle" onclick="toggleCamera()">📹 Camera</button>
+        <button id="mic-btn" class="btn-toggle" onclick="toggleMicrophone()">🎤 Mic</button>
+        <button class="btn-stop" onclick="disconnectStream()">🚪 Thoát</button>
+      </div>
+    </div>
+
+    <!-- Viewer Link Popup (Bottom Right) -->
+    <div id="viewer-link-popup" class="overlay viewer-link-popup auto-hide" style="display: none;">
+      <h3>🔗 Viewer Link</h3>
+      <div class="viewer-link" id="viewer-link-text">Đang tạo link...</div>
+      <button class="btn-copy" onclick="copyViewerLink()">📋 Copy Link</button>
+      <div class="info-text">Share link này để viewer có thể xem stream</div>
+    </div>
+
+    <script>
+      const wsUrl = "wss://wslive.loltips.net";
+      let currentRoom = null;
+      let localTracks = [];
+      let isStreaming = false;
+      let streamStartTime = null;
+      let timerInterval = null;
+      let cameraEnabled = true;
+      let micEnabled = true;
+
+      // Lấy query params từ URL
+      function getQuery(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+      // Cập nhật status
+      function updateConnectionStatus(status, type = 'connecting') {
+        const statusElement = document.getElementById('connection-status');
+        statusElement.textContent = status;
+        statusElement.className = `status-badge status-${type}`;
+      }
+
+      // Popup management functions
+      function showError(message) {
+        const errorPopup = document.getElementById('error-popup');
+        const errorMessage = document.getElementById('error-message');
+        errorMessage.innerHTML = `
+          <div style="margin-bottom: 15px;">${message}</div>
+          <button onclick="retryConnection()" style="background: linear-gradient(45deg, #4CAF50, #388e3c); margin-right: 10px;">🔄 Thử lại</button>
+        `;
+        errorPopup.style.display = 'block';
+      }
+
+      function hideErrorPopup() {
+        document.getElementById('error-popup').style.display = 'none';
+      }
+
+      function showLoading(show = true) {
+        document.getElementById('loading-popup').style.display = show ? 'block' : 'none';
+      }
+
+      function toggleStreamInfo(show = true) {
+        document.getElementById('stream-info-popup').style.display = show ? 'block' : 'none';
+      }
+
+      function toggleControls(show = true) {
+        document.getElementById('controls-popup').style.display = show ? 'block' : 'none';
+      }
+
+      function toggleViewerLink(show = true) {
+        document.getElementById('viewer-link-popup').style.display = show ? 'block' : 'none';
+      }
+
+      function retryConnection() {
+        hideErrorPopup();
+        startStreaming();
+      }
+
+      // Cập nhật thông tin room
+      function updateRoomInfo(roomId, identity) {
+        document.getElementById('room-display').textContent = roomId || '-';
+        document.getElementById('identity-display').textContent = identity || '-';
+      }
+
+      // Cập nhật viewer link
+      function updateViewerLink(roomId, viewerToken) {
+        const viewerUrl = `${window.location.origin}/viewer.html?room=${roomId}&token=${viewerToken}`;
+        document.getElementById('viewer-link-text').textContent = viewerUrl;
+        toggleViewerLink(true);
+      }
+
+      // Copy viewer link
+      function copyViewerLink() {
+        const linkText = document.getElementById('viewer-link-text').textContent;
+        navigator.clipboard.writeText(linkText).then(() => {
+          const btn = event.target;
+          const originalText = btn.textContent;
+          btn.textContent = '✅ Đã copy!';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        });
+      }
+
+      // Timer functions
+      function startTimer() {
+        streamStartTime = new Date();
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        document.getElementById('stream-timer').textContent = '⏰ 00:00:00';
+      }
+
+      function updateTimer() {
+        if (!streamStartTime) return;
+        const now = new Date();
+        const diff = now - streamStartTime;
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        document.getElementById('stream-timer').textContent = 
+          `⏰ ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+
+      // Participant management
+      function updateParticipants() {
+        if (!currentRoom) return;
+        
+        const participantList = document.getElementById('participant-list');
+        participantList.innerHTML = '';
+        
+        // Count viewers (exclude streamer)
+        let viewerCount = currentRoom.participants.size;
+        document.getElementById('viewer-count').textContent = viewerCount;
+        
+        // Add participants
+        currentRoom.participants.forEach(participant => {
+          const participantEl = document.createElement('div');
+          participantEl.className = 'participant';
+          participantEl.textContent = participant.identity;
+          participantList.appendChild(participantEl);
+        });
+        
+        // Show stream info if streaming
+        if (isStreaming) {
+          toggleStreamInfo(true);
+        }
+      }
+
+      // Stream control functions
+      async function startStreaming() {
+        const roomId = getQuery('room');
+        const token = getQuery('token');
+
+        if (!roomId || !token) {
+          showError('URL không hợp lệ! Thiếu room hoặc token parameter.<br>URL đúng: stream.html?room=ROOM_ID&token=TOKEN');
+          updateConnectionStatus('Lỗi URL', 'error');
+          return;
+        }
+
+        try {
+          updateConnectionStatus('Đang kết nối...', 'connecting');
+          showLoading(true);
+          hideErrorPopup();
+          
+          // Get camera and microphone
+          const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 1280, height: 720, frameRate: 30 },
+            audio: true
+          });
+
+          // Display local video
+          const localVideo = document.createElement('video');
+          localVideo.srcObject = mediaStream;
+          localVideo.autoplay = true;
+          localVideo.muted = true;
+          localVideo.style.width = '100%';
+          localVideo.style.height = '100%';
+          localVideo.style.objectFit = 'cover';
+          
+          const localContainer = document.getElementById('local-video');
+          localContainer.innerHTML = '';
+          localContainer.appendChild(localVideo);
+
+          // Create room
+          currentRoom = new LivekitClient.Room();
+
+          // Event handlers
+          currentRoom.on('participantConnected', (participant) => {
+            console.log('👤 Participant connected:', participant.identity);
+            updateParticipants();
+          });
+
+          currentRoom.on('participantDisconnected', (participant) => {
+            console.log('👋 Participant disconnected:', participant.identity);
+            updateParticipants();
+          });
+
+          currentRoom.on('trackSubscribed', (track, publication, participant) => {
+            console.log('📺 Track subscribed from viewer:', participant.identity);
+            // Viewers don't typically send video back, but handle if they do
+          });
+
+          currentRoom.on('disconnected', () => {
+            console.log('❌ Disconnected from stream');
+            updateConnectionStatus('Đã ngắt kết nối', 'disconnected');
+            resetUI();
+          });
+
+          currentRoom.on('connectionStateChanged', (state) => {
+            console.log('🔄 Connection state:', state);
+            if (state === 'connected') {
+              updateConnectionStatus('Đang streaming', 'streaming');
+              showLoading(false);
+              toggleControls(true);
+              isStreaming = true;
+              startTimer();
+              
+              // Update UI
+              document.getElementById('start-btn').style.display = 'none';
+              document.getElementById('stop-btn').style.display = 'inline-block';
+              
+            } else if (state === 'connecting') {
+              updateConnectionStatus('Đang kết nối...', 'connecting');
+            } else if (state === 'disconnected') {
+              updateConnectionStatus('Đã ngắt kết nối', 'disconnected');
+              toggleControls(false);
+            }
+          });
+
+          // Connect to room
+          await currentRoom.connect(wsUrl, token);
+          
+          // Create tracks from media stream
+          localTracks = await LivekitClient.createLocalTracks({
+            audio: true,
+            video: { width: 1280, height: 720, frameRate: 30 }
+          });
+
+          // Publish tracks
+          for (const track of localTracks) {
+            await currentRoom.localParticipant.publishTrack(track);
+          }
+          
+          // Update UI
+          updateRoomInfo(roomId, currentRoom.localParticipant.identity);
+          updateParticipants();
+          
+          // Get viewer token from URL or generate viewer link
+          const viewerToken = getQuery('viewerToken') || 'VIEWER_TOKEN_HERE';
+          updateViewerLink(roomId, viewerToken);
+          
+        } catch (err) {
+          console.error('❌ Streaming error:', err);
+          showLoading(false);
+          
+          let errorMessage = 'Không thể bắt đầu stream';
+          if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
+            errorMessage = '🚫 Không có quyền truy cập camera/mic. Vui lòng cho phép truy cập.';
+          } else if (err.message.includes('token')) {
+            errorMessage = '🔑 Token không hợp lệ hoặc đã hết hạn';
+          } else if (err.message.includes('room')) {
+            errorMessage = '🏠 Room không tồn tại hoặc không thể tạo';
+          }
+          
+          showError(`${errorMessage}<br><small>Chi tiết: ${err.message}</small>`);
+          updateConnectionStatus('Lỗi stream', 'error');
+        }
+      }
+
+      // Stop streaming
+      async function stopStreaming() {
+        try {
+          if (currentRoom) {
+            // Stop publishing tracks
+            for (const track of localTracks) {
+              track.stop();
+            }
+            localTracks = [];
+            
+            await currentRoom.disconnect();
+          }
+          
+          isStreaming = false;
+          stopTimer();
+          updateConnectionStatus('Đã dừng stream', 'disconnected');
+          
+          // Update UI
+          document.getElementById('start-btn').style.display = 'inline-block';
+          document.getElementById('stop-btn').style.display = 'none';
+          
+          // Reset local video
+          document.getElementById('local-video').innerHTML = 
+            '<div class="placeholder">📹 Camera của bạn<br><small>Đã dừng stream</small></div>';
+            
+        } catch (err) {
+          console.error('❌ Stop streaming error:', err);
+        }
+      }
+
+      // Toggle camera
+      async function toggleCamera() {
+        if (!currentRoom || localTracks.length === 0) return;
+        
+        const videoTrack = localTracks.find(track => track.kind === 'video');
+        if (videoTrack) {
+          cameraEnabled = !cameraEnabled;
+          videoTrack.mute(!cameraEnabled);
+          
+          const btn = document.getElementById('camera-btn');
+          btn.textContent = cameraEnabled ? '📹 Camera' : '📹 Camera (Off)';
+          btn.className = cameraEnabled ? 'btn-toggle' : 'btn-toggle disabled';
+        }
+      }
+
+      // Toggle microphone
+      async function toggleMicrophone() {
+        if (!currentRoom || localTracks.length === 0) return;
+        
+        const audioTrack = localTracks.find(track => track.kind === 'audio');
+        if (audioTrack) {
+          micEnabled = !micEnabled;
+          audioTrack.mute(!micEnabled);
+          
+          const btn = document.getElementById('mic-btn');
+          btn.textContent = micEnabled ? '🎤 Mic' : '🎤 Mic (Off)';
+          btn.className = micEnabled ? 'btn-toggle' : 'btn-toggle disabled';
+        }
+      }
+
+      // Disconnect stream
+      async function disconnectStream() {
+        try {
+          if (isStreaming) {
+            await stopStreaming();
+          }
+          if (currentRoom) {
+            await currentRoom.disconnect();
+            currentRoom = null;
+          }
+          resetUI();
+        } catch (err) {
+          console.error('❌ Disconnect error:', err);
+        }
+      }
+
+      // Reset UI
+      function resetUI() {
+        document.getElementById('local-video').innerHTML = 
+          '<div class="placeholder">📹 Camera của bạn<br><small>Sẽ hiển thị khi bắt đầu stream</small></div>';
+        document.getElementById('remote-video').innerHTML = 
+          '<div class="placeholder">👥 Viewers<br><small>Viewer sẽ thấy camera của bạn ở đây</small></div>';
+        
+        toggleStreamInfo(false);
+        toggleControls(false);
+        toggleViewerLink(false);
+        showLoading(false);
+        
+        document.getElementById('start-btn').style.display = 'inline-block';
+        document.getElementById('stop-btn').style.display = 'none';
+        
+        stopTimer();
+        isStreaming = false;
+      }
+
+      // Auto-start when page loads
+      window.onload = () => {
+        const roomId = getQuery('room');
+        const token = getQuery('token');
+        
+        if (roomId && token) {
+          updateRoomInfo(roomId, 'Đang chuẩn bị...');
+          toggleControls(true);
+        } else {
+          showError('URL không hợp lệ! Thiếu room hoặc token parameter.<br><strong>URL đúng:</strong> stream.html?room=ROOM_ID&token=TOKEN');
+          updateConnectionStatus('Lỗi URL', 'error');
+        }
+      };
+
+      // Cleanup when leaving page
+      window.addEventListener('beforeunload', () => {
+        if (currentRoom) {
+          currentRoom.disconnect();
+        }
+        // Stop all tracks
+        for (const track of localTracks) {
+          track.stop();
+        }
+      });
+    </script>
+  </body>
+</html> 

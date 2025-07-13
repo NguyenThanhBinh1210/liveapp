@@ -1,0 +1,1518 @@
+# 📚 API CLIENT GUIDE - LIVESTREAM PLATFORM
+
+## 🌟 Tổng quan
+
+Đây là hướng dẫn chi tiết về tất cả API endpoints dành cho client trong hệ thống livestream platform. Tài liệu này bao gồm:
+
+- **Authentication & Authorization**
+- **Tất cả API endpoints với examples**
+- **Data types và validation**
+- **Error handling**
+- **Best practices**
+
+---
+
+## 🔐 AUTHENTICATION & AUTHORIZATION
+
+
+### Authentication Methods
+
+#### 1. JWT Bearer Token
+```javascript
+// Headers cho authenticated requests
+{
+  "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### 2. Public Endpoints
+Một số endpoints không cần authentication (đánh dấu `🌍 PUBLIC`)
+
+### User Roles
+- **`user`**: Người dùng thường
+- **`streamer`**: Người phát trực tiếp
+- **`admin`**: Quản trị viên
+- **`superadmin`**: Quản trị viên cấp cao
+- **`staff`**: Nhân viên hỗ trợ
+- **`moderator`**: Điều hành viên
+
+---
+
+## 🔑 AUTH MODULE
+
+### 1. Đăng ký tài khoản
+```http
+POST /auth/register
+```
+**🌍 PUBLIC** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Validation Rules**:
+- `name`: String, 2-50 ký tự
+- `email`: Email hợp lệ, unique
+- `password`: Tối thiểu 6 ký tự
+
+**Response (201)**:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "64f8c9b2e1234567890abcde",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "user"
+  }
+}
+```
+
+**Errors**:
+- `400`: Dữ liệu không hợp lệ
+- `409`: Email đã tồn tại
+
+### 2. Đăng nhập
+```http
+POST /auth/login
+```
+**🌍 PUBLIC** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Response (200)**:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "64f8c9b2e1234567890abcde",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "user"
+  }
+}
+```
+
+**Errors**:
+- `401`: Thông tin đăng nhập không đúng
+
+### 3. Làm mới token
+```http
+POST /auth/refresh-token
+```
+**🌍 PUBLIC** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (200)**:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### 4. Lấy thông tin profile
+```http
+GET /auth/profile
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "id": "64f8c9b2e1234567890abcde",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "role": "user",
+  "createdAt": "2023-09-07T10:30:00.000Z"
+}
+```
+
+### 5. Lấy tài khoản test (Development Only)
+```http
+GET /auth/test-accounts
+```
+**🌍 PUBLIC**
+
+**Response (200)**:
+```json
+{
+  "status": "success",
+  "message": "Test accounts for development",
+  "data": [
+    {
+      "email": "admin@test.com",
+      "password": "Admin123",
+      "role": "admin",
+      "description": "Admin user with full permissions"
+    },
+    {
+      "email": "streamer@test.com",
+      "password": "Stream123",
+      "role": "streamer",
+      "description": "Streamer user for live streaming features"
+    }
+  ]
+}
+```
+
+---
+
+## 👤 USER MODULE
+
+### 1. Lấy thông tin profile hiện tại
+```http
+GET /user/me
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "avatar": "https://example.com/avatar.jpg",
+  "role": "user",
+  "isActive": true,
+  "createdAt": "2023-12-01T00:00:00.000Z",
+  "updatedAt": "2023-12-01T00:00:00.000Z"
+}
+```
+
+### 2. Cập nhật thông tin profile
+```http
+PUT /user/profile
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "name": "John Updated",
+  "avatar": "https://example.com/new-avatar.jpg"
+}
+```
+
+**Validation Rules**:
+- `name`: String, 2-50 ký tự (optional)
+- `avatar`: URL hợp lệ (optional)
+
+### 3. Đổi mật khẩu
+```http
+PUT /user/change-password
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "currentPassword": "oldpassword123",
+  "newPassword": "newpassword123"
+}
+```
+
+**Validation Rules**:
+- `currentPassword`: String, required
+- `newPassword`: String, tối thiểu 6 ký tự
+
+---
+
+## 🎁 GIFT MODULE
+
+### 1. Lấy tất cả quà tặng
+```http
+GET /gifts?page=1&limit=10&category=reward&status=active&rarity=common
+```
+**🌍 PUBLIC**
+
+**Query Parameters**:
+- `page`: Number (default: 1)
+- `limit`: Number (default: 10, max: 100)
+- `category`: `reward` | `premium`
+- `status`: `active` | `inactive`
+- `rarity`: `common` | `rare` | `epic` | `legendary`
+
+**Response (200)**:
+```json
+{
+  "gifts": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "name": "Hoa Hồng",
+      "description": "Bông hoa hồng đỏ tượng trưng cho tình yêu",
+      "iconUrl": "https://example.com/icons/rose.png",
+      "price": 1000,
+      "category": "reward",
+      "status": "active",
+      "rarity": "common",
+      "maxClaimsPerUser": 1,
+      "sortOrder": 1,
+      "canSendInLive": true,
+      "totalClaimed": 150,
+      "totalSent": 0,
+      "totalRevenue": 0,
+      "createdAt": "2023-12-01T00:00:00.000Z",
+      "updatedAt": "2023-12-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3
+  }
+}
+```
+
+### 2. Lấy quà tặng miễn phí
+```http
+GET /gifts/rewards?page=1&limit=10
+```
+**🌍 PUBLIC**
+
+**Response**: Tương tự như trên, chỉ trả về gifts có `price: 0`
+
+### 3. Lấy quà tặng trả phí
+```http
+GET /gifts/premium?page=1&limit=10
+```
+**🌍 PUBLIC**
+
+**Response**: Tương tự như trên, chỉ trả về gifts có `price > 0`
+
+### 4. Lấy chi tiết quà tặng
+```http
+GET /gifts/:id
+```
+**🌍 PUBLIC**
+
+**Response (200)**:
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "name": "Hoa Hồng",
+  "description": "Bông hoa hồng đỏ tượng trưng cho tình yêu",
+  "iconUrl": "https://example.com/icons/rose.png",
+  "price": 0,
+  "category": "reward",
+  "status": "active",
+  "rarity": "common",
+  "maxClaimsPerUser": 1,
+  "canSendInLive": false,
+  "totalClaimed": 150,
+  "totalSent": 0,
+  "totalRevenue": 0
+}
+```
+
+### 5. Nhận quà miễn phí
+```http
+POST /gifts/claim
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "giftId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Response (201)**:
+```json
+{
+  "message": "Gift claimed successfully",
+  "gift": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "Hoa Hồng",
+    "description": "Bông hoa hồng đỏ tượng trưng cho tình yêu",
+    "price": 0,
+    "category": "reward"
+  },
+  "transaction": {
+    "_id": "507f1f77bcf86cd799439012",
+    "type": "claim",
+    "status": "completed",
+    "quantity": 1,
+    "totalAmount": 0
+  }
+}
+```
+
+**Errors**:
+- `400`: Quà không thể nhận hoặc đã nhận rồi
+- `404`: Quà không tồn tại
+
+### 6. Gửi quà trả phí
+```http
+POST /gifts/send
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "giftId": "507f1f77bcf86cd799439011",
+  "receiverId": "507f1f77bcf86cd799439013",
+  "streamId": "507f1f77bcf86cd799439014",
+  "quantity": 1,
+  "message": "Great stream!"
+}
+```
+
+**Validation Rules**:
+- `giftId`: ObjectId, required
+- `receiverId`: ObjectId, required
+- `streamId`: ObjectId, optional
+- `quantity`: Number, min: 1, max: 100
+- `message`: String, max: 200 ký tự
+
+**Response (201)**:
+```json
+{
+  "message": "Gift sent successfully",
+  "gift": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "Hoa Hồng",
+    "price": 1000
+  },
+  "transaction": {
+    "_id": "507f1f77bcf86cd799439012",
+    "type": "send",
+    "status": "completed",
+    "quantity": 1,
+    "totalAmount": 1000
+  },
+  "walletTransaction": {
+    "_id": "507f1f77bcf86cd799439015",
+    "type": "GIFT",
+    "amount": -1000,
+    "description": "Sent gift: Hoa Hồng"
+  }
+}
+```
+
+**Errors**:
+- `400`: Số dư không đủ, quà không thể gửi
+- `404`: Quà hoặc người nhận không tồn tại
+
+### 7. Lịch sử quà đã gửi
+```http
+GET /gifts/history/sent?page=1&limit=10
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "transactions": [
+    {
+      "_id": "507f1f77bcf86cd799439012",
+      "gift": {
+        "_id": "507f1f77bcf86cd799439011",
+        "name": "Hoa Hồng",
+        "iconUrl": "https://example.com/icons/rose.png"
+      },
+      "receiver": {
+        "_id": "507f1f77bcf86cd799439013",
+        "name": "Jane Doe"
+      },
+      "quantity": 1,
+      "totalAmount": 1000,
+      "message": "Great stream!",
+      "createdAt": "2023-12-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 5,
+    "totalPages": 1
+  }
+}
+```
+
+### 8. Lịch sử quà đã nhận
+```http
+GET /gifts/history/received?page=1&limit=10
+```
+**🔒 AUTHENTICATED**
+
+**Response**: Tương tự như trên, nhưng từ góc độ người nhận
+
+---
+
+## 💰 WALLET MODULE
+
+### 1. Lấy thông tin ví
+```http
+GET /wallet/balance
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "balance": 150000,
+  "currency": "VND",
+  "lastUpdated": "2023-12-01T00:00:00.000Z"
+}
+```
+
+### 2. Yêu cầu nạp tiền
+```http
+POST /wallet/topup
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "amount": 100000,
+  "note": "Nạp tiền cho tài khoản"
+}
+```
+
+**Validation Rules**:
+- `amount`: Number, min: 10000, max: 10000000
+- `note`: String, max: 500 ký tự
+
+**Response (201)**:
+```json
+{
+  "message": "Topup request created successfully",
+  "transaction": {
+    "_id": "507f1f77bcf86cd799439011",
+    "type": "TOPUP",
+    "amount": 100000,
+    "status": "pending",
+    "description": "Yêu cầu nạp tiền thủ công",
+    "note": "Nạp tiền cho tài khoản",
+    "createdAt": "2023-12-01T00:00:00.000Z"
+  }
+}
+```
+
+### 3. Yêu cầu rút tiền
+```http
+POST /wallet/withdraw
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "amount": 50000,
+  "bankAccount": "1234567890",
+  "bankName": "Vietcombank",
+  "accountHolder": "NGUYEN VAN A",
+  "note": "Rút tiền về tài khoản"
+}
+```
+
+**Validation Rules**:
+- `amount`: Number, min: 50000, max: user balance
+- `bankAccount`: String, required
+- `bankName`: String, required
+- `accountHolder`: String, required
+- `note`: String, max: 500 ký tự
+
+**Response (201)**:
+```json
+{
+  "message": "Withdraw request created successfully",
+  "transaction": {
+    "_id": "507f1f77bcf86cd799439011",
+    "type": "WITHDRAW",
+    "amount": 50000,
+    "status": "pending",
+    "description": "Yêu cầu rút tiền",
+    "bankAccount": "1234567890",
+    "bankName": "Vietcombank",
+    "accountHolder": "NGUYEN VAN A",
+    "createdAt": "2023-12-01T00:00:00.000Z"
+  }
+}
+```
+
+### 4. Lịch sử giao dịch
+```http
+GET /wallet/transactions?page=1&limit=10&type=TOPUP&status=approved
+```
+**🔒 AUTHENTICATED**
+
+**Query Parameters**:
+- `page`: Number (default: 1)
+- `limit`: Number (default: 10)
+- `type`: `TOPUP` | `WITHDRAW` | `GIFT` | `REWARD` | `REFERRAL`
+- `status`: `pending` | `approved` | `rejected` | `completed` | `failed` | `cancelled`
+
+**Response (200)**:
+```json
+{
+  "transactions": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "type": "TOPUP",
+      "amount": 100000,
+      "status": "approved",
+      "description": "Yêu cầu nạp tiền thủ công",
+      "note": "Nạp tiền cho tài khoản",
+      "adminNote": "Đã duyệt yêu cầu nạp tiền",
+      "createdAt": "2023-12-01T00:00:00.000Z",
+      "updatedAt": "2023-12-01T01:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "current": 1,
+    "limit": 10,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+## 📺 LIVE MODULE
+
+### 1. Lấy danh sách streams đang LIVE
+```http
+GET /stream?page=1&limit=10&status=live
+```
+**🌍 PUBLIC**
+
+**Query Parameters**:
+- `page`: Number (default: 1)
+- `limit`: Number (default: 10)
+- `status`: `live` | `ended` | `scheduled`
+
+**Response (200)**:
+```json
+{
+  "streams": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "title": "Gaming Stream - Playing Valorant",
+      "description": "Chơi game Valorant cùng với bạn bè!",
+      "thumbnailUrl": "https://example.com/thumbnails/stream-123.jpg",
+      "status": "live",
+      "viewerCount": 150,
+      "startedAt": "2023-12-01T10:00:00.000Z",
+      "streamer": {
+        "_id": "507f1f77bcf86cd799439012",
+        "name": "John Streamer",
+        "avatar": "https://example.com/avatars/john.jpg"
+      },
+      "roomId": "room_507f1f77bcf86cd799439011",
+      "createdAt": "2023-12-01T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 5,
+    "totalPages": 1
+  }
+}
+```
+
+### 2. Lấy chi tiết stream
+```http
+GET /stream/:id
+```
+**🌍 PUBLIC**
+
+**Response (200)**:
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "title": "Gaming Stream - Playing Valorant",
+  "description": "Chơi game Valorant cùng với bạn bè!",
+  "thumbnailUrl": "https://example.com/thumbnails/stream-123.jpg",
+  "status": "live",
+  "viewerCount": 150,
+  "startedAt": "2023-12-01T10:00:00.000Z",
+  "endedAt": null,
+  "streamer": {
+    "_id": "507f1f77bcf86cd799439012",
+    "name": "John Streamer",
+    "avatar": "https://example.com/avatars/john.jpg"
+  },
+  "roomId": "room_507f1f77bcf86cd799439011",
+  "metadata": {
+    "category": "gaming",
+    "tags": ["valorant", "fps", "competitive"]
+  }
+}
+```
+
+### 3. Lấy token viewer để xem stream
+```http
+POST /stream/viewer-token
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "streamId": "507f1f77bcf86cd799439011",
+  "identity": "viewer_john_doe"
+}
+```
+
+**Response (200)**:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "wsUrl": "wss://wslive.loltips.net",
+  "roomId": "room_507f1f77bcf86cd799439011",
+  "identity": "viewer_john_doe",
+  "expiresAt": "2023-12-01T11:00:00.000Z"
+}
+```
+
+### 4. Bắt đầu livestream (Streamer)
+```http
+POST /stream
+```
+**🔒 AUTHENTICATED** | **Role**: `streamer`, `admin`
+
+**Request Body**:
+```json
+{
+  "title": "Gaming Stream - Playing Valorant",
+  "description": "Chơi game Valorant cùng với bạn bè!",
+  "thumbnailUrl": "https://example.com/thumbnails/stream-123.jpg",
+  "category": "gaming",
+  "tags": ["valorant", "fps", "competitive"]
+}
+```
+
+**Response (201)**:
+```json
+{
+  "message": "Stream created successfully",
+  "stream": {
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Gaming Stream - Playing Valorant",
+    "status": "live",
+    "roomId": "room_507f1f77bcf86cd799439011"
+  },
+  "streamerToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "wsUrl": "wss://wslive.loltips.net"
+}
+```
+
+### 5. Kết thúc livestream (Streamer)
+```http
+PATCH /stream/:id/stop
+```
+**🔒 AUTHENTICATED** | **Role**: `streamer`, `admin`
+
+**Response (200)**:
+```json
+{
+  "message": "Stream stopped successfully",
+  "stream": {
+    "_id": "507f1f77bcf86cd799439011",
+    "status": "ended",
+    "endedAt": "2023-12-01T12:00:00.000Z",
+    "duration": 7200
+  }
+}
+```
+
+### 6. Cập nhật thông tin stream
+```http
+PATCH /stream/:id
+```
+**🔒 AUTHENTICATED** | **Role**: `streamer`, `admin`
+
+**Request Body**:
+```json
+{
+  "title": "Updated Gaming Stream",
+  "description": "Updated description",
+  "thumbnailUrl": "https://example.com/new-thumbnail.jpg"
+}
+```
+
+---
+
+## 💬 CHAT MODULE
+
+### 1. Gửi tin nhắn văn bản
+```http
+POST /chat/send
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "roomId": "room_livestream_123",
+  "message": "Hello everyone!",
+  "isSupport": false,
+  "sentBy": "user"
+}
+```
+
+**Validation Rules**:
+- `roomId`: String, required
+- `message`: String, 1-500 ký tự
+- `isSupport`: Boolean, default: false
+- `sentBy`: `user` | `admin`
+
+**Response (201)**:
+```json
+{
+  "success": true,
+  "message": "Message sent successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "roomId": "room_livestream_123",
+    "senderId": "507f1f77bcf86cd799439012",
+    "senderName": "John Doe",
+    "message": "Hello everyone!",
+    "isSupport": false,
+    "sentBy": "user",
+    "sentAt": "2023-12-01T00:00:00.000Z"
+  }
+}
+```
+
+### 2. Gửi tin nhắn hình ảnh
+```http
+POST /chat/send-image
+```
+**🔒 AUTHENTICATED** | **Content-Type**: `application/json`
+
+**Request Body**:
+```json
+{
+  "roomId": "room_livestream_123",
+  "imageUrl": "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+  "isSupport": false,
+  "sentBy": "user"
+}
+```
+
+**Validation Rules**:
+- `imageUrl`: URL hợp lệ, từ domain được hỗ trợ
+- Hỗ trợ: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`
+- Max length: 500 ký tự
+
+### 3. Lấy tin nhắn theo room
+```http
+GET /chat/room/:roomId?cursor=&limit=20&order=desc
+```
+**🔒 AUTHENTICATED**
+
+**Query Parameters**:
+- `cursor`: String, ObjectId để pagination
+- `limit`: Number, max: 100
+- `order`: `asc` | `desc`
+
+**Response (200)**:
+```json
+{
+  "messages": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "roomId": "room_livestream_123",
+      "senderId": "507f1f77bcf86cd799439012",
+      "senderName": "John Doe",
+      "message": "Hello everyone!",
+      "messageType": "text",
+      "isSupport": false,
+      "sentBy": "user",
+      "sentAt": "2023-12-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "hasMore": true,
+    "nextCursor": "507f1f77bcf86cd799439010"
+  }
+}
+```
+
+### 4. Lịch sử chat support của tôi
+```http
+GET /chat/support/me?cursor=&limit=20&order=desc
+```
+**🔒 AUTHENTICATED**
+
+**Response**: Tương tự như trên, roomId = `support_{userId}`
+
+---
+
+## 🔔 NOTIFICATION MODULE
+
+### 1. Lấy thông báo của tôi
+```http
+GET /notification/me?page=1&limit=10&type=gift&isRead=false
+```
+**🔒 AUTHENTICATED**
+
+**Query Parameters**:
+- `page`: Number (default: 1)
+- `limit`: Number (default: 10)
+- `type`: `gift` | `system` | `stream` | `wallet`
+- `isRead`: Boolean
+
+**Response (200)**:
+```json
+{
+  "notifications": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "type": "gift",
+      "title": "Bạn nhận được quà!",
+      "message": "John Doe đã gửi cho bạn Hoa Hồng",
+      "isRead": false,
+      "data": {
+        "giftId": "507f1f77bcf86cd799439012",
+        "senderId": "507f1f77bcf86cd799439013",
+        "amount": 1000
+      },
+      "createdAt": "2023-12-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 5,
+    "totalPages": 1
+  }
+}
+```
+
+### 2. Đánh dấu thông báo đã đọc
+```http
+PATCH /notification/:id/read
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "message": "Notification marked as read",
+  "notification": {
+    "_id": "507f1f77bcf86cd799439011",
+    "isRead": true,
+    "readAt": "2023-12-01T00:00:00.000Z"
+  }
+}
+```
+
+### 3. Đánh dấu tất cả đã đọc
+```http
+PATCH /notification/mark-all-read
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "message": "All notifications marked as read",
+  "modifiedCount": 5
+}
+```
+
+### 4. Số lượng thông báo chưa đọc
+```http
+GET /notification/unread-count
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "unreadCount": 3
+}
+```
+
+---
+
+## 🎯 REFERRAL MODULE
+
+### 1. Lấy mã giới thiệu
+```http
+GET /referral/code
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "code": "REF123456",
+  "url": "https://livestream.com/register?ref=REF123456",
+  "totalReferrals": 5,
+  "totalEarnings": 50000
+}
+```
+
+### 2. Tạo mã giới thiệu mới
+```http
+POST /referral/generate
+```
+**🔒 AUTHENTICATED**
+
+**Response (201)**:
+```json
+{
+  "code": "REF789012",
+  "url": "https://livestream.com/register?ref=REF789012",
+  "message": "New referral code generated"
+}
+```
+
+### 3. Thống kê giới thiệu
+```http
+GET /referral/stats
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "totalReferrals": 10,
+  "totalEarnings": 100000,
+  "thisMonthReferrals": 3,
+  "thisMonthEarnings": 30000,
+  "referralHistory": [
+    {
+      "referredUser": "Jane Doe",
+      "registeredAt": "2023-12-01T00:00:00.000Z",
+      "earnings": 10000
+    }
+  ]
+}
+```
+
+---
+
+## ⚙️ SYSTEM MODULE
+
+### 1. Lấy cấu hình hệ thống
+```http
+GET /system/config
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "status": "success",
+  "data": {
+    "maintenanceMode": false,
+    "allowRegistration": true,
+    "maxFileSize": 10485760,
+    "supportedImageTypes": ["jpg", "jpeg", "png", "gif", "webp"],
+    "supportedVideoTypes": ["mp4", "webm", "ogg"],
+    "apiVersion": "1.0.0",
+    "environment": "development",
+    "domains": {
+      "frontendUrl": "http://localhost:3001",
+      "apiDomain": "http://localhost:3000",
+      "socketDomain": "http://localhost:3002",
+      "livekitWsUrl": "wss://wslive.loltips.net"
+    }
+  }
+}
+```
+
+### 2. Kiểm tra trạng thái hệ thống
+```http
+GET /system/health
+```
+**🔒 AUTHENTICATED**
+
+**Response (200)**:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2023-12-01T00:00:00.000Z",
+  "services": {
+    "database": "connected",
+    "redis": "connected",
+    "livekit": "connected"
+  },
+  "uptime": 3600
+}
+```
+
+---
+
+## 🔧 ERROR HANDLING
+
+### HTTP Status Codes
+
+| Code | Meaning | Description |
+|------|---------|-------------|
+| 200 | OK | Request thành công |
+| 201 | Created | Tạo resource thành công |
+| 400 | Bad Request | Dữ liệu request không hợp lệ |
+| 401 | Unauthorized | Chưa xác thực hoặc token hết hạn |
+| 403 | Forbidden | Không có quyền truy cập |
+| 404 | Not Found | Resource không tồn tại |
+| 409 | Conflict | Conflict với resource hiện tại |
+| 422 | Unprocessable Entity | Validation error |
+| 500 | Internal Server Error | Lỗi server |
+
+### Error Response Format
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "details": [
+    {
+      "field": "email",
+      "message": "Email must be a valid email address"
+    }
+  ]
+}
+```
+
+### Common Error Messages
+
+```json
+// Authentication errors
+{
+  "statusCode": 401,
+  "message": "Authentication failed",
+  "error": "Unauthorized"
+}
+
+// Validation errors
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": "Bad Request",
+  "details": [
+    {
+      "field": "password",
+      "message": "Password must be at least 6 characters long"
+    }
+  ]
+}
+
+// Permission errors
+{
+  "statusCode": 403,
+  "message": "Insufficient permissions",
+  "error": "Forbidden"
+}
+
+// Not found errors
+{
+  "statusCode": 404,
+  "message": "Resource not found",
+  "error": "Not Found"
+}
+```
+
+---
+
+## 🚀 BEST PRACTICES
+
+### 1. Authentication
+```javascript
+// Lưu token trong localStorage hoặc secure cookie
+localStorage.setItem('accessToken', response.accessToken);
+localStorage.setItem('refreshToken', response.refreshToken);
+
+// Thêm token vào headers
+const headers = {
+  'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+  'Content-Type': 'application/json'
+};
+```
+
+### 2. Error Handling
+```javascript
+try {
+  const response = await fetch('/api/user/me', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  
+  if (!response.ok) {
+    if (response.status === 401) {
+      // Token hết hạn, làm mới token
+      await refreshToken();
+      // Retry request
+    }
+    throw new Error(`HTTP ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data;
+} catch (error) {
+  console.error('API Error:', error);
+  throw error;
+}
+```
+
+### 3. Pagination
+```javascript
+// Sử dụng pagination cho lists
+const getGifts = async (page = 1, limit = 10) => {
+  const response = await fetch(`/api/gifts?page=${page}&limit=${limit}`);
+  const data = await response.json();
+  
+  return {
+    items: data.gifts,
+    pagination: data.pagination
+  };
+};
+```
+
+### 4. Real-time Updates
+```javascript
+// Kết nối WebSocket cho real-time updates
+const socket = io('ws://localhost:3002');
+
+socket.on('new_message', (message) => {
+  // Cập nhật UI với tin nhắn mới
+  updateChatUI(message);
+});
+
+socket.on('gift_received', (gift) => {
+  // Hiển thị animation nhận quà
+  showGiftAnimation(gift);
+});
+```
+
+### 5. File Upload
+```javascript
+// Upload file trước khi gửi tin nhắn hình ảnh
+const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  const response = await fetch('/api/upload/image', {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  
+  const data = await response.json();
+  return data.imageUrl;
+};
+
+// Sau đó gửi tin nhắn với imageUrl
+const sendImageMessage = async (roomId, imageUrl) => {
+  await fetch('/api/chat/send-image', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      roomId,
+      imageUrl,
+      isSupport: false,
+      sentBy: 'user'
+    })
+  });
+};
+```
+
+---
+
+## 📱 EXAMPLE CLIENT IMPLEMENTATIONS
+
+### React Example
+```jsx
+import React, { useState, useEffect } from 'react';
+
+const GiftList = () => {
+  const [gifts, setGifts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchGifts();
+  }, []);
+
+  const fetchGifts = async () => {
+    try {
+      const response = await fetch('/api/gifts?category=premium');
+      if (!response.ok) throw new Error('Failed to fetch gifts');
+      
+      const data = await response.json();
+      setGifts(data.gifts);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendGift = async (giftId, receiverId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/gifts/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          giftId,
+          receiverId,
+          quantity: 1,
+          message: 'Great stream!'
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to send gift');
+      
+      const data = await response.json();
+      alert('Gift sent successfully!');
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      <h2>Premium Gifts</h2>
+      {gifts.map(gift => (
+        <div key={gift._id} className="gift-item">
+          <img src={gift.iconUrl} alt={gift.name} />
+          <h3>{gift.name}</h3>
+          <p>{gift.description}</p>
+          <span>{gift.price} VND</span>
+          <button onClick={() => sendGift(gift._id, 'receiverId')}>
+            Send Gift
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+### JavaScript Vanilla Example
+```javascript
+// API Client Class
+class LivestreamAPI {
+  constructor(baseURL = 'http://localhost:3000') {
+    this.baseURL = baseURL;
+    this.token = localStorage.getItem('accessToken');
+  }
+
+  async request(endpoint, options = {}) {
+    const url = `${this.baseURL}${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.token && { 'Authorization': `Bearer ${this.token}` })
+      },
+      ...options
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          await this.refreshToken();
+          // Retry with new token
+          config.headers['Authorization'] = `Bearer ${this.token}`;
+          return fetch(url, config);
+        }
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API Request failed:', error);
+      throw error;
+    }
+  }
+
+  async login(email, password) {
+    const data = await this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    this.token = data.accessToken;
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    
+    return data;
+  }
+
+  async getGifts(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request(`/gifts?${queryString}`);
+  }
+
+  async sendGift(giftData) {
+    return this.request('/gifts/send', {
+      method: 'POST',
+      body: JSON.stringify(giftData)
+    });
+  }
+
+  async getWalletBalance() {
+    return this.request('/wallet/balance');
+  }
+
+  async refreshToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    const data = await this.request('/auth/refresh-token', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken })
+    });
+
+    this.token = data.accessToken;
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+  }
+}
+
+// Usage
+const api = new LivestreamAPI();
+
+// Login
+await api.login('user@example.com', 'password123');
+
+// Get gifts
+const gifts = await api.getGifts({ category: 'premium', limit: 20 });
+
+// Send gift
+await api.sendGift({
+  giftId: '507f1f77bcf86cd799439011',
+  receiverId: '507f1f77bcf86cd799439013',
+  quantity: 1,
+  message: 'Great stream!'
+});
+```
+
+---
+
+## 🔗 WEBSOCKET EVENTS
+
+### Connection
+```javascript
+const socket = io('ws://localhost:3002', {
+  auth: {
+    token: localStorage.getItem('accessToken')
+  }
+});
+```
+
+### Available Events
+
+#### 1. Chat Events
+```javascript
+// Gửi tin nhắn
+socket.emit('send_message', {
+  roomId: 'room_123',
+  message: 'Hello!',
+  type: 'text'
+});
+
+// Nhận tin nhắn mới
+socket.on('new_message', (data) => {
+  console.log('New message:', data);
+});
+```
+
+#### 2. Gift Events
+```javascript
+// Gửi quà
+socket.emit('send_gift', {
+  giftId: '507f1f77bcf86cd799439011',
+  receiverId: '507f1f77bcf86cd799439013',
+  streamId: '507f1f77bcf86cd799439014',
+  quantity: 1
+});
+
+// Nhận quà
+socket.on('gift_received', (data) => {
+  console.log('Gift received:', data);
+  // Hiển thị animation
+});
+```
+
+#### 3. Stream Events
+```javascript
+// Stream bắt đầu
+socket.on('stream_started', (data) => {
+  console.log('New stream:', data);
+});
+
+// Stream kết thúc
+socket.on('stream_ended', (data) => {
+  console.log('Stream ended:', data);
+});
+
+// Viewer count update
+socket.on('viewer_count_update', (data) => {
+  console.log('Viewers:', data.count);
+});
+```
+
+---
+
+## 📝 CHANGELOG
+
+### Version 1.0.0
+- Initial API release
+- Basic authentication & authorization
+- Gift system with unified schema
+- Wallet management
+- Live streaming with LiveKit
+- Real-time chat
+- Notification system
+- Referral system
+
+---
+
+## 🆘 SUPPORT
+
+### Development Team
+- **Backend**: Node.js + NestJS + MongoDB
+- **Real-time**: Socket.IO + Redis
+- **Live Streaming**: LiveKit
+- **Documentation**: Swagger UI available at `/api`
+

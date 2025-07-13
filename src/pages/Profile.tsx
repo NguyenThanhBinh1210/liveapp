@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { changePassword, getProfile, updateProfile } from '~/apis/auth.api'
 import toast from 'react-hot-toast'
-import { getWallet, getWalletTransaction, recharge, withdraw } from '~/apis/wallet.api'
+import { getWalletBalance as getWallet, getTransactionHistory as getWalletTransaction, requestTopup as recharge } from '~/apis/wallet.api'
 import { Video } from 'lucide-react'
 
 const Profile = () => {
@@ -391,33 +391,34 @@ const Withdraw = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [amount, setAmount] = useState(0)
   const [note, setNote] = useState('')
-  const [balance, setBalance] = useState(0)
-  useQuery({
-    queryKey: ['balance', 'withdraw'],
-    queryFn: () => getWallet(),
-    onSuccess: (data) => {
-      setBalance(data.data.data.balance)
-    }
-  })
+  const [balance] = useState(0)
+  // useQuery({
+  //   queryKey: ['balance', 'withdraw'],
+  //   queryFn: () => getWallet(),
+  //   onSuccess: (data) => {
+  //     setBalance(data.data.data.balance)
+  //   }
+  // })
 
-  const queryClient = useQueryClient()
-  const mutation = useMutation({
-    mutationFn: (body: { amount: number; note: string }) => withdraw(body),
-    onSuccess: () => {
-      toast.success(t('handle_withdraw_success'))
-      setAmount(0)
-      setNote('')
-      queryClient.invalidateQueries({ queryKey: ['balance'] })
-      queryClient.invalidateQueries({ queryKey: ['balance', 'withdraw'] })
-      queryClient.invalidateQueries({ queryKey: ['wallet'] })
-    },
-    onError: () => {
-      toast.error(t('handle_withdraw_failed'))
-    }
-  })
+  // const queryClient = useQueryClient()
+  // const mutation = useMutation({
+  //   mutationFn: (body: { amount: number; note: string }) => withdraw(body),
+  //   onSuccess: () => {
+  //     toast.success(t('handle_withdraw_success'))
+  //     setAmount(0)
+  //     setNote('')
+  //     queryClient.invalidateQueries({ queryKey: ['balance'] })
+  //     queryClient.invalidateQueries({ queryKey: ['balance', 'withdraw'] })
+  //     queryClient.invalidateQueries({ queryKey: ['wallet'] })
+  //   },
+  //   onError: () => {
+  //     toast.error(t('handle_withdraw_failed'))
+  //   }
+  // })
   const handleWithdraw = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    mutation.mutate({ amount, note })
+    // mutation.mutate({ amount, note })
+    console.log('Withdraw:', { amount, note })
   }
 
   return (
@@ -474,8 +475,8 @@ const Withdraw = () => {
             <h2 className='text-lg font-bold dark:text-white absolute left-1/2 -translate-x-1/2'>{t('withdraw')}</h2>
           </div>
           <div className='flex flex-col items-center justify-center '>
-            <p className='text-xs  text-gray-500 mb-1.5 dark:text-gray-300'>{t('balance_can_withdraw')}</p>
-            <p className='text-2xl font-bold dark:text-white mb-5'>{balance}</p>
+                            <p className='text-xs  text-gray-500 mb-1.5 dark:text-gray-300'>{t('balance_can_withdraw')}</p>
+                <p className='text-2xl font-bold dark:text-white mb-5'>{balance}</p>
           </div>
           <form onSubmit={handleWithdraw} className='px-4 mt-2'>
             {/* <p className='text-sm font-medium dark:text-white mb-5'>{t('withdraw_information')}</p> */}
@@ -627,14 +628,17 @@ export const Recharge = ({ children, className }: { children?: React.ReactNode; 
 
 interface Transaction {
   _id: string
-  userId: string
-  type: string
+  type: 'TOPUP' | 'WITHDRAW' | 'GIFT' | 'REWARD' | 'REFERRAL'
   amount: number
-  status: string
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'failed' | 'cancelled'
   description: string
+  note?: string
+  adminNote?: string
+  bankAccount?: string
+  bankName?: string
+  accountHolder?: string
   createdAt: string
   updatedAt: string
-  note: string
 }
 
 const Balance = () => {
@@ -642,18 +646,26 @@ const Balance = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [balance, setBalance] = useState(0)
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  
   useQuery({
     queryKey: ['balance'],
     queryFn: () => getWallet(),
     onSuccess: (data) => {
-      setBalance(data.data.data.balance)
+      setBalance(data.balance)
+    },
+    onError: (error) => {
+      console.error('Error fetching balance:', error)
     }
   })
-  useQuery({
+  
+  const { isLoading: transactionsLoading } = useQuery({
     queryKey: ['wallet'],
     queryFn: () => getWalletTransaction({}),
     onSuccess: (data) => {
-      setTransactions(data.data.data.transactions)
+      setTransactions(data.transactions || [])
+    },
+    onError: (error) => {
+      console.error('Error fetching transactions:', error)
     }
   })
   const getStatusColor = (status: string) => {
@@ -835,7 +847,12 @@ const Balance = () => {
             </div>
           </div>
           <div className='px-4 space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto mt-4'>
-            {transactions.map((transaction: Transaction) => (
+            {transactionsLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            ) : transactions && transactions.length > 0 ? (
+              transactions.map((transaction: Transaction) => (
               <div key={transaction._id} className='bg-gray-50 rounded-lg p-3 mt-4'>
                 <div className='flex items-center justify-between gap-x-2 mb-1'>
                   <div className='space-y-1'>
@@ -858,7 +875,12 @@ const Balance = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>{t('No transactions found')}</p>
+              </div>
+            )}
             {/* <div className='bg-gray-50 rounded-lg p-3 mt-4'>
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>

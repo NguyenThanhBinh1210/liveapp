@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Viewer Live</title>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #000;
+        color: white;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      /* Fullscreen video container */
+      #video-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+      }
+      
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      
+      audio {
+        display: none;
+      }
+      
+      .placeholder {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 24px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 40px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+      }
+      
+      /* Popup overlays */
+      .overlay {
+        position: fixed;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+      }
+      
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      /* Top overlay for connection status */
+      .status-overlay {
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        min-width: 300px;
+      }
+      
+      /* Error popup */
+      .error-popup {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(244, 67, 54, 0.9);
+        border: 1px solid #f44336;
+        animation: shake 0.5s ease-in-out;
+      }
+      
+      @keyframes shake {
+        0%, 100% { transform: translate(-50%, -50%); }
+        25% { transform: translate(-52%, -50%); }
+        75% { transform: translate(-48%, -50%); }
+      }
+      
+      /* Loading popup */
+      .loading-popup {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(33, 150, 243, 0.9);
+        border: 1px solid #2196f3;
+        text-align: center;
+      }
+      
+      /* Participants popup */
+      .participants-popup {
+        top: 20px;
+        right: 20px;
+        background: rgba(76, 175, 80, 0.9);
+        border: 1px solid #4caf50;
+        max-width: 250px;
+      }
+      
+      /* Controls popup */
+      .controls-popup {
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(156, 39, 176, 0.9);
+        border: 1px solid #9c27b0;
+        text-align: center;
+      }
+      
+      .status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: bold;
+        margin: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      .status-connecting { 
+        background: linear-gradient(45deg, #ff9800, #f57c00); 
+        color: white;
+      }
+      .status-connected { 
+        background: linear-gradient(45deg, #4caf50, #388e3c); 
+        color: white;
+      }
+      .status-error { 
+        background: linear-gradient(45deg, #f44336, #d32f2f); 
+        color: white;
+      }
+      .status-disconnected { 
+        background: linear-gradient(45deg, #9e9e9e, #616161); 
+        color: white;
+      }
+      
+      button {
+        background: linear-gradient(45deg, #f44336, #d32f2f);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        margin: 5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+      }
+      
+      button:active {
+        transform: translateY(0);
+      }
+      
+      .participant {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 15px;
+        margin: 3px;
+        font-size: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      
+      .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 3px solid #fff;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 10px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Auto-hide overlays */
+      .auto-hide {
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+      }
+      
+      .auto-hide:hover {
+        opacity: 1;
+      }
+      
+      /* Info text */
+      .info-text {
+        font-size: 12px;
+        margin-top: 10px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      
+      h3 {
+        margin: 0 0 10px 0;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      
+      /* Hide scrollbars */
+      ::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Fullscreen video container -->
+    <div id="video-container">
+      <div class="placeholder">📺 Đang chờ video stream...</div>
+    </div>
+
+    <!-- Connection Status Overlay (Top Center) -->
+    <div id="status-overlay" class="overlay status-overlay auto-hide">
+      <h3>📡 Connection Status</h3>
+      <div>
+        <span class="status-badge" id="connection-status">Đang khởi tạo...</span>
+      </div>
+      <div class="info-text">
+        <strong>Room:</strong> <span id="room-display">-</span><br>
+        <strong>Identity:</strong> <span id="identity-display">-</span>
+      </div>
+    </div>
+
+    <!-- Loading Popup (Center) -->
+    <div id="loading-popup" class="overlay loading-popup" style="display: none;">
+      <div class="spinner"></div>
+      <span>Đang kết nối đến livestream...</span>
+    </div>
+
+    <!-- Error Popup (Center) -->
+    <div id="error-popup" class="overlay error-popup" style="display: none;">
+      <h3>❌ Lỗi kết nối</h3>
+      <div id="error-message"></div>
+      <button onclick="hideErrorPopup()" style="margin-top: 15px;">Đóng</button>
+    </div>
+
+    <!-- Participants Popup (Top Right) -->
+    <div id="participants-popup" class="overlay participants-popup auto-hide" style="display: none;">
+      <h3>👥 Participants</h3>
+      <div id="participant-list"></div>
+    </div>
+      
+    <!-- Controls Popup (Bottom Center) -->
+    <div id="controls-popup" class="overlay controls-popup auto-hide" style="display: none;">
+      <button id="unmute-btn" onclick="unmuteAudio()" style="display: none; background: linear-gradient(45deg, #ff9800, #f57c00); margin-right: 10px;">🔊 Bật âm thanh</button>
+      <button onclick="confirmDisconnect()">🚪 Rời khỏi stream</button>
+    </div>
+
+    <script>
+      const wsUrl = "wss://wslive.loltips.net";
+      let currentRoom = null;
+      let audioElements = []; // Lưu trữ các audio elements để quản lý
+
+      // Lấy query params từ URL
+      function getQuery(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+      // Cập nhật status
+      function updateConnectionStatus(status, type = 'connecting') {
+        const statusElement = document.getElementById('connection-status');
+        statusElement.textContent = status;
+        statusElement.className = `status-badge status-${type}`;
+      }
+
+      // Hiển thị lỗi popup
+      function showError(message) {
+        const errorPopup = document.getElementById('error-popup');
+        const errorMessage = document.getElementById('error-message');
+        errorMessage.innerHTML = `
+          <div style="margin-bottom: 15px;">${message}</div>
+          <button onclick="retryConnection()" style="background: linear-gradient(45deg, #4CAF50, #388e3c); margin-right: 10px;">🔄 Thử lại</button>
+        `;
+        errorPopup.style.display = 'block';
+      }
+
+      // Ẩn error popup
+      function hideErrorPopup() {
+        document.getElementById('error-popup').style.display = 'none';
+      }
+
+      // Thử kết nối lại
+      function retryConnection() {
+        hideErrorPopup();
+        startViewing();
+      }
+
+      // Hiển thị loading popup
+      function showLoading(show = true) {
+        document.getElementById('loading-popup').style.display = show ? 'block' : 'none';
+      }
+
+      // Hiển thị/ẩn participants popup
+      function toggleParticipants(show = true) {
+        document.getElementById('participants-popup').style.display = show ? 'block' : 'none';
+      }
+
+      // Hiển thị/ẩn controls popup
+      function toggleControls(show = true) {
+        document.getElementById('controls-popup').style.display = show ? 'block' : 'none';
+      }
+
+      // Cập nhật thông tin room
+      function updateRoomInfo(roomId, identity) {
+        document.getElementById('room-display').textContent = roomId || '-';
+        document.getElementById('identity-display').textContent = identity || '-';
+      }
+
+      // Hiển thị nút unmute khi browser chặn autoplay audio
+      function showUnmuteButton(audioElement) {
+        const unmuteBtn = document.getElementById('unmute-btn');
+        unmuteBtn.style.display = 'inline-block';
+        
+        // Lưu audio element để unmute sau
+        if (!audioElements.includes(audioElement)) {
+          audioElements.push(audioElement);
+        }
+        
+        console.log('🔇 Audio autoplay blocked - showing unmute button');
+      }
+
+      // Hàm unmute audio khi user click
+      function unmuteAudio() {
+        audioElements.forEach(audioElement => {
+          if (audioElement && audioElement.paused) {
+            const playPromise = audioElement.play();
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                console.log('🔊 Audio resumed successfully after user interaction');
+              }).catch(error => {
+                console.error('❌ Failed to resume audio:', error);
+              });
+            }
+          }
+        });
+        
+        // Ẩn nút unmute sau khi bật
+        const unmuteBtn = document.getElementById('unmute-btn');
+        unmuteBtn.style.display = 'none';
+      }
+
+      // Hàm kiểm tra và khởi tạo audio context nếu cần
+      function initAudioContext() {
+        // Tạo AudioContext để đảm bảo Web Audio API hoạt động
+        if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+          const AudioContextClass = AudioContext || webkitAudioContext;
+          if (!window.audioContext) {
+            window.audioContext = new AudioContextClass();
+            
+            if (window.audioContext.state === 'suspended') {
+              window.audioContext.resume().then(() => {
+                console.log('🎵 AudioContext resumed successfully');
+              });
+            }
+          }
+        }
+      }
+
+      // Cập nhật danh sách participants
+      function updateParticipants() {
+        if (!currentRoom || !currentRoom.localParticipant) return;
+        
+        try {
+          const participantList = document.getElementById('participant-list');
+          if (!participantList) return;
+          
+          participantList.innerHTML = '';
+          
+          // Add local participant
+          const localEl = document.createElement('div');
+          localEl.className = 'participant';
+          localEl.textContent = `${currentRoom.localParticipant.identity || 'Viewer'} (You)`;
+          participantList.appendChild(localEl);
+          
+          // Add remote participants
+          if (currentRoom.participants) {
+            currentRoom.participants.forEach(participant => {
+              const participantEl = document.createElement('div');
+              participantEl.className = 'participant';
+              participantEl.textContent = participant.identity || 'Unknown';
+              participantList.appendChild(participantEl);
+            });
+          }
+          
+          // Show participants popup if there are participants
+          const totalParticipants = 1 + (currentRoom.participants ? currentRoom.participants.size : 0);
+          if (totalParticipants > 1) {
+            toggleParticipants(true);
+          }
+        } catch (err) {
+          console.error('❌ Error updating participants:', err);
+        }
+      }
+
+      // Bắt đầu xem livestream
+      async function startViewing() {
+        const roomId = getQuery('room');
+        let token = getQuery('token');
+
+        if (!roomId) {
+          showError('URL không hợp lệ! Thiếu room parameter.<br>URL đúng: viewer.html?room=ROOM_ID');
+          updateConnectionStatus('Lỗi URL', 'error');
+          return;
+        }
+
+        // Nếu không có token trong URL, lấy từ API
+        if (!token) {
+          try {
+            updateConnectionStatus('Đang lấy token...', 'connecting');
+            const response = await fetch(`/api/v1/stream/token?room=${roomId}&identity=viewer_${Date.now()}&role=viewer`);
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            token = data.token;
+            
+            if (!token) {
+              throw new Error('Không nhận được token từ server');
+            }
+          } catch (err) {
+            console.error('❌ Token fetch error:', err);
+            let errorMessage = 'Không thể lấy token từ server';
+            
+            if (err.message.includes('404')) {
+              errorMessage = '🏠 Room không tồn tại hoặc đã đóng';
+            } else if (err.message.includes('403')) {
+              errorMessage = '🚫 Không có quyền truy cập room này';
+            } else if (err.message.includes('500')) {
+              errorMessage = '🔧 Lỗi server, vui lòng thử lại sau';
+            }
+            
+            showError(`${errorMessage}<br><small>Chi tiết: ${err.message}</small>`);
+            updateConnectionStatus('Lỗi token', 'error');
+            return;
+          }
+        }
+
+        try {
+          updateConnectionStatus('Đang kết nối...', 'connecting');
+          showLoading(true);
+          hideErrorPopup();
+          
+          // Ngắt kết nối cũ nếu có
+          if (currentRoom) {
+            await currentRoom.disconnect();
+          }
+
+          // Tạo room mới
+          currentRoom = new LivekitClient.Room();
+
+          // Đăng ký các event handlers - Fixed cho camera toggle
+          currentRoom.on('trackSubscribed', (track, publication, participant) => {
+            console.log('📺 Track subscribed:', track.kind, 'from', participant.identity);
+            
+            if (track.kind === 'video') {
+              console.log('📹 Video track received, attaching to viewer...');
+              
+              const videoElement = track.attach();
+              videoElement.style.width = '100%';
+              videoElement.style.height = '100%';
+              videoElement.style.objectFit = 'cover';
+              videoElement.autoplay = true;
+              videoElement.playsInline = true;
+              
+              const videoContainer = document.getElementById('video-container');
+              videoContainer.innerHTML = '';
+              videoContainer.appendChild(videoElement);
+              
+              console.log('✅ Video element attached and playing');
+              
+            } else if (track.kind === 'audio') {
+              console.log('🔊 Audio track received, setting up audio...');
+              
+              const audioElement = track.attach();
+              // Đảm bảo audio có thể phát được theo Chrome Autoplay Policy
+              audioElement.muted = false; 
+              audioElement.autoplay = true;
+              audioElement.style.display = 'none';
+              
+              // Thử phát audio ngay sau khi attach
+              const playPromise = audioElement.play();
+              if (playPromise !== undefined) {
+                playPromise.then(() => {
+                  console.log('🔊 Audio autoplay started successfully');
+                }).catch(error => {
+                  console.warn('🔇 Audio autoplay prevented by browser, showing unmute button');
+                  showUnmuteButton(audioElement);
+                });
+              }
+              
+              document.body.appendChild(audioElement);
+            }
+          });
+
+          currentRoom.on('trackUnsubscribed', (track, publication, participant) => {
+            console.log('❌ Track unsubscribed:', track.kind, 'from', participant.identity);
+            
+            if (track.kind === 'video') {
+              console.log('📹 Video track removed, showing placeholder...');
+              
+              // Detach video elements
+              const detachedElements = track.detach();
+              detachedElements.forEach(element => {
+                if (element.parentNode) {
+                  element.parentNode.removeChild(element);
+                }
+              });
+              
+              // Show placeholder for video
+              const videoContainer = document.getElementById('video-container');
+              videoContainer.innerHTML = '<div class="placeholder">📹 Streamer đã tắt camera<br><small>Chờ streamer bật lại...</small></div>';
+              
+            } else if (track.kind === 'audio') {
+              console.log('🔊 Audio track removed...');
+              
+              const detachedElements = track.detach();
+              detachedElements.forEach(element => {
+                // Remove từ audioElements array
+                const index = audioElements.indexOf(element);
+                if (index > -1) {
+                  audioElements.splice(index, 1);
+                }
+                // Remove từ DOM
+                if (element.parentNode) {
+                  element.parentNode.removeChild(element);
+                }
+              });
+            } else {
+              // Other track types
+              track.detach();
+            }
+          });
+
+          currentRoom.on('participantConnected', (participant) => {
+            console.log('👤 Participant connected:', participant.identity);
+            updateParticipants();
+          });
+
+          // Thêm handlers cho track mute/unmute events
+          currentRoom.on('trackMuted', (publication, participant) => {
+            console.log(`🔇 Track muted: ${publication.kind} from ${participant.identity}`);
+            
+            if (publication.kind === 'video') {
+              const videoContainer = document.getElementById('video-container');
+              videoContainer.innerHTML = '<div class="placeholder">📹 Video đã bị tắt<br><small>Streamer đã mute video</small></div>';
+            }
+          });
+
+          currentRoom.on('trackUnmuted', (publication, participant) => {
+            console.log(`🔊 Track unmuted: ${publication.kind} from ${participant.identity}`);
+            
+            if (publication.kind === 'video' && publication.track) {
+              console.log('📹 Video track unmuted, re-attaching...');
+              
+              const videoElement = publication.track.attach();
+              videoElement.style.width = '100%';
+              videoElement.style.height = '100%';
+              videoElement.style.objectFit = 'cover';
+              videoElement.autoplay = true;
+              videoElement.playsInline = true;
+              
+              const videoContainer = document.getElementById('video-container');
+              videoContainer.innerHTML = '';
+              videoContainer.appendChild(videoElement);
+            }
+          });
+
+          // Thêm handlers cho track published/unpublished events
+          currentRoom.on('trackPublished', (publication, participant) => {
+            console.log(`📤 Track published: ${publication.kind} from ${participant.identity}`);
+            
+            // Track sẽ được auto-subscribe nếu autoSubscribe enabled
+            if (publication.kind === 'video') {
+              console.log('📹 New video track available, waiting for subscription...');
+            }
+          });
+
+          currentRoom.on('trackUnpublished', (publication, participant) => {
+            console.log(`📤 Track unpublished: ${publication.kind} from ${participant.identity}`);
+            
+            if (publication.kind === 'video') {
+              console.log('📹 Video track unpublished, showing placeholder...');
+              const videoContainer = document.getElementById('video-container');
+              videoContainer.innerHTML = '<div class="placeholder">📹 Streamer đã tắt camera<br><small>Chờ streamer bật lại...</small></div>';
+            }
+          });
+
+          currentRoom.on('participantDisconnected', (participant) => {
+            console.log('👋 Participant disconnected:', participant.identity);
+            updateParticipants();
+            
+            // Kiểm tra nếu không còn streamer nào (chỉ còn viewer) - delay để đảm bảo state đã update
+            setTimeout(() => {
+              checkStreamStatus();
+            }, 2000);
+          });
+
+          currentRoom.on('disconnected', () => {
+            console.log('❌ Disconnected from livestream');
+            updateConnectionStatus('Đã ngắt kết nối', 'disconnected');
+            resetUI();
+            
+            // Tự động quay về trang trước khi bị ngắt kết nối
+            setTimeout(() => {
+              goBackOrClose();
+            }, 2000); // Delay 2 giây để user thấy thông báo
+          });
+
+          currentRoom.on('connectionStateChanged', (state) => {
+            console.log('🔄 Connection state:', state);
+            if (state === 'connected') {
+              updateConnectionStatus('Đã kết nối', 'connected');
+              showLoading(false);
+              hideErrorPopup(); // Ẩn error popup khi kết nối thành công
+              toggleControls(true);
+              
+              // Khởi tạo AudioContext sau khi kết nối thành công
+              initAudioContext();
+            } else if (state === 'connecting') {
+              updateConnectionStatus('Đang kết nối...', 'connecting');
+            } else if (state === 'disconnected') {
+              updateConnectionStatus('Đã ngắt kết nối', 'disconnected');
+              toggleControls(false);
+            }
+          });
+
+          // Kết nối đến room
+          await currentRoom.connect(wsUrl, token);
+          
+          // Cập nhật UI
+          updateRoomInfo(roomId, currentRoom.localParticipant.identity);
+          updateParticipants();
+          
+        } catch (err) {
+          console.error('❌ Connection error:', err);
+          showLoading(false);
+          
+          let errorMessage = 'Không thể kết nối đến livestream';
+          if (err.message.includes('token')) {
+            errorMessage = '🔑 Token không hợp lệ hoặc đã hết hạn';
+          } else if (err.message.includes('room')) {
+            errorMessage = '🏠 Room không tồn tại hoặc đã đóng';
+          } else if (err.message.includes('websocket') || err.message.includes('WebSocket')) {
+            errorMessage = '🌐 Không thể kết nối đến server LiveKit';
+          }
+          
+          showError(`${errorMessage}<br><small>Chi tiết: ${err.message}</small>`);
+          updateConnectionStatus('Lỗi kết nối', 'error');
+        }
+      }
+
+      // Xác nhận trước khi rời khỏi stream
+      function confirmDisconnect() {
+        const shouldLeave = confirm('Bạn có chắc chắn muốn rời khỏi livestream không?');
+        if (shouldLeave) {
+          disconnectStream();
+        }
+      }
+
+      // Ngắt kết nối và quay về trang trước hoặc đóng tab
+      async function disconnectStream() {
+        try {
+          if (currentRoom) {
+            await currentRoom.disconnect();
+            currentRoom = null;
+          }
+          updateConnectionStatus('Đã ngắt kết nối', 'disconnected');
+          resetUI();
+          
+          // Quay về trang trước hoặc đóng tab
+          await goBackOrClose();
+        } catch (err) {
+          console.error('❌ Disconnect error:', err);
+          // Vẫn thử quay về trang trước nếu có lỗi
+          await goBackOrClose();
+        }
+      }
+
+      // Kiểm tra trạng thái stream và tự động kết thúc nếu không còn streamer
+      function checkStreamStatus() {
+        if (!currentRoom || !currentRoom.participants) return;
+        
+        try {
+          // Đếm số participants có track video (streamer)
+          let activeStreamers = 0;
+          let hasVideoTracks = false;
+          
+          currentRoom.participants.forEach(participant => {
+            if (participant.tracks && participant.tracks.size > 0) {
+              const hasVideo = Array.from(participant.tracks.values()).some(
+                trackPub => trackPub.track && trackPub.track.kind === 'video' && trackPub.isSubscribed
+              );
+              if (hasVideo) {
+                activeStreamers++;
+                hasVideoTracks = true;
+              }
+            }
+          });
+          
+          console.log(`👥 Participants: ${currentRoom.participants.size}, Active streamers: ${activeStreamers}`);
+          
+          // Chỉ kết thúc stream nếu:
+          // 1. Không có participants nào HOẶC
+          // 2. Không có video tracks nào và đã kết nối được ít nhất 10 giây
+          const isConnectedLongEnough = currentRoom.state === 'connected';
+          
+          if (isConnectedLongEnough && currentRoom.participants.size === 0) {
+            console.log('📺 Livestream đã kết thúc - không còn participants');
+            endLivestream();
+          }
+        } catch (err) {
+          console.error('❌ Error checking stream status:', err);
+        }
+      }
+
+      // Kết thúc livestream với thông báo
+      function endLivestream() {
+        updateConnectionStatus('Livestream đã kết thúc', 'disconnected');
+        
+        // Hiển thị thông báo kết thúc
+        showError(`
+          <div style="background: rgba(255, 193, 7, 0.9); color: #000; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            📺 <strong>Livestream đã kết thúc</strong><br>
+            <small>Streamer đã rời khỏi phòng</small>
+          </div>
+          <div>Tự động quay về trang trước sau <span id="countdown">5</span> giây...</div>
+        `);
+        
+        // Đếm ngược và tự động quay về
+        let countdown = 5;
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          const countdownEl = document.getElementById('countdown');
+          if (countdownEl) {
+            countdownEl.textContent = countdown;
+          }
+          
+          if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            hideErrorPopup();
+            goBackOrClose();
+          }
+        }, 1000);
+      }
+
+      // Hàm quay về trang trước hoặc đóng tab
+      async function goBackOrClose() {
+        try {
+          // Kiểm tra xem có thể quay về trang trước không
+          if (window.history.length > 1 && document.referrer) {
+            // Có lịch sử và có trang trước, quay về
+            window.history.back();
+          } else {
+            // Không có trang trước, thử đóng tab
+            // Hiển thị thông báo trước khi đóng
+            const shouldClose = confirm('Livestream đã kết thúc. Bạn có muốn đóng tab này không?');
+            if (shouldClose) {
+              window.close();
+            }
+          }
+        } catch (err) {
+          console.error('❌ Navigation error:', err);
+          // Fallback: reload trang chủ hoặc hiển thị thông báo
+          alert('Livestream đã kết thúc. Vui lòng đóng tab này.');
+        }
+      }
+
+      // Reset UI về trạng thái ban đầu
+      function resetUI() {
+        document.getElementById('video-container').innerHTML = '<div class="placeholder">📺 Đang chờ video stream...</div>';
+        toggleParticipants(false);
+        toggleControls(false);
+        showLoading(false);
+        document.getElementById('participant-list').innerHTML = '';
+      }
+
+      // Auto-start khi trang load
+      window.onload = () => {
+        const roomId = getQuery('room');
+        
+        if (roomId) {
+          updateRoomInfo(roomId, 'Đang chuẩn bị...');
+          setTimeout(startViewing, 500); // Delay nhỏ để UI render
+        } else {
+          showError('URL không hợp lệ! Thiếu room parameter.<br><strong>URL đúng:</strong> viewer.html?room=ROOM_ID');
+          updateConnectionStatus('Lỗi URL', 'error');
+        }
+      };
+
+      // Cleanup khi thoát trang
+      window.addEventListener('beforeunload', () => {
+        if (currentRoom) {
+          currentRoom.disconnect();
+        }
+      });
+
+      // Add user interaction listener để enable audio
+      document.addEventListener('click', () => {
+        initAudioContext();
+      }, { once: true }); // Chỉ chạy 1 lần
+
+      // Add touch event cho mobile
+      document.addEventListener('touchstart', () => {
+        initAudioContext();
+      }, { once: true });
+    </script>
+  </body>
+</html>
+
