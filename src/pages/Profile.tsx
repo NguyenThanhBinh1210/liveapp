@@ -7,6 +7,7 @@ import { changePassword, getProfile, updateProfile } from '~/apis/auth.api'
 import toast from 'react-hot-toast'
 import { getWallet, getWalletTransaction, recharge, withdraw } from '~/apis/wallet.api'
 import { Video } from 'lucide-react'
+
 const Profile = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -655,6 +656,107 @@ const Balance = () => {
       setTransactions(data.data.data.transactions)
     }
   })
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'text-yellow-500 border-yellow-500';
+      case 'approved':
+        return 'text-green-700 border-green-700';
+      case 'completed':
+        return 'text-green-500 border-green-500';
+      case 'rejected':
+        return 'text-pink-500 border-pink-500';
+      default:
+        return 'text-gray-500 border-gray-500';
+    }
+  };
+  const getStatusText = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return t('pending');
+      case 'approved':
+        return t('approved');
+      case 'completed':
+        return t('completed');
+      case 'rejected':
+        return t('rejected');
+      default:
+        return t('not_found');
+    }
+  };
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+
+  const getTypeText = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'topup':
+        return t('topup');
+      case 'withdraw':
+        return t('withdraw');
+      case 'gift':
+        return t('gift');
+      case 'reward':
+        return t('reward');
+      case 'referral':
+        return t('referral');
+      default:
+        return t('not_found');
+    }
+  }
+  const getTypeColor = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'topup':
+        return 'bg-green-500';
+      case 'withdraw':
+        return 'bg-pink-500';
+      case 'gift':
+        return 'bg-pink-500';
+      case 'reward':
+        return 'bg-green-500';
+      case 'referral':
+        return 'bg-green-500';
+      default:
+        return 'bg-green-500';
+    }
+  }
+  const getTypeColorText = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'topup':
+        return 'text-green-500';
+      case 'withdraw':
+        return 'text-pink-500';
+      case 'gift':
+        return 'text-pink-500';
+      case 'reward':
+        return 'text-green-500';
+      case 'referral':
+        return 'text-green-500';
+      default:
+        return 'text-green-500';
+    }
+  }
+  const getTypeMinus = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'topup':
+        return '+';
+      case 'withdraw':
+        return '-';
+      case 'gift':
+        return '-';
+      case 'reward':
+        return '+';
+      case 'referral':
+        return '+';
+      default:
+        return '+';
+    }
+  }
+
+  const formatCurrency = (value: number) => {
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' đ';
+
+  };
   return (
     <>
       <button
@@ -737,25 +839,27 @@ const Balance = () => {
               <div key={transaction._id} className='bg-gray-50 rounded-lg p-3 mt-4'>
                 <div className='flex items-center justify-between gap-x-2 mb-1'>
                   <div className='space-y-1'>
-                    <div className={`bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max ${transaction.type === 'TOPUP' ? 'bg-green-500' : transaction.type === 'WITHDRAW' ? 'bg-red-500' : ''}`}>
-                      {transaction.type === 'TOPUP' ? t('topup') : transaction.type === 'WITHDRAW' ? t('withdraw') : ''}
+                    <div
+                      className={`text-white px-2 py-1 rounded-md text-xs w-max ${getTypeColor(transaction.type)}`}
+                    >
+                      {getTypeText(transaction.type)}
                     </div>
                     <p className='text-sm font-medium '>{transaction.description}</p>
-                    <p className='text-xs text-gray-400'>{transaction.createdAt}</p>
+                    <p className='text-xs text-gray-400'>{formatDate(transaction.createdAt)}</p>
                   </div>
-                  <div className='text-end'>
+                  <div className='text-end flex flex-col items-end space-y-1'>
                     <p
-                      className={`text-sm font-medium ${transaction.type === 'TOPUP' ? 'text-green-500' : 'text-red-500'
-                        }`}
+                      className={`text-sm font-medium ${getTypeColorText(transaction.type)}`}
                     >
-                      {transaction.type === 'TOPUP' ? '+' : '-'}{transaction.amount}đ
+                      {getTypeMinus(transaction.type)} {' '}
+                      {formatCurrency(transaction.amount)}
                     </p>
-                    <p className='text-xs text-gray-400'>{transaction.status}</p>
+                    <p className={`text-xs  pb-0.5 w-max px-3 border ${getStatusColor(transaction.status)} text-center rounded-md `}>{getStatusText(transaction.status)}</p>
                   </div>
                 </div>
               </div>
             ))}
-            <div className='bg-gray-50 rounded-lg p-3 mt-4'>
+            {/* <div className='bg-gray-50 rounded-lg p-3 mt-4'>
               <div className='flex items-center justify-between gap-x-2 mb-1'>
                 <div className='space-y-1'>
                   <div className='bg-green-500 text-white px-2 py-1 rounded-md text-xs w-max'>{t('collect')}</div>
@@ -780,7 +884,7 @@ const Balance = () => {
                   <p className='text-xs text-gray-400'>￥1000450.00</p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

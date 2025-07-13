@@ -92,5 +92,12 @@
   "handle_withdraw_failed": "Handle withdraw failed",
   "handle_recharge_success": "Handle recharge successfully",
   "handle_recharge_failed": "Handle recharge failed",
-  "no_live": "No live"
+  "no_live": "No live",
+  "pending": "Pending",
+  "approved": "Approved",
+  "rejected": "Rejected",
+  "completed": "Completed",
+  "gift": "Gift",
+  "reward": "Reward",
+  "referral": "Referral"
 }

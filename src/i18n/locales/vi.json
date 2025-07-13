@@ -92,5 +92,13 @@
   "handle_withdraw_failed": "Yêu cầu rút tiền thất bại",
   "handle_recharge_success": "Yêu cầu nạp tiền thành công",
   "handle_recharge_failed": "Yêu cầu nạp tiền thất bại",
-  "no_live": "Không có phiên live nào đang diễn ra"
+  "no_live": "Không có phiên live nào đang diễn ra",
+  "pending": "Đang chờ",
+  "approved": "Đã duyệt",
+  "rejected": "Đã từ chối",
+  "completed": "Đã hoàn tất",
+  "gift": "Quà tặng",
+  "reward": "Thưởng",
+  "referral": "Hoa hồng giới thiệu",
+  "not_found": "Không tìm thấy"
 }
